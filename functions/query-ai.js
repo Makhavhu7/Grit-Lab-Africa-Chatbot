@@ -40,8 +40,7 @@ exports.handler = async function (event) {
         };
     }
 
-    const API_URL = 'https://router.huggingface.co/v1/chat/completions';
-
+const API_URL = `https://api-inference.huggingface.co/models/deepseek-ai/DeepSeek-V3-0324`;
     try {
         console.log('Calling Hugging Face API with model:', model);
         const response = await fetch(API_URL, {
