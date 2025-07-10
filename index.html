@@ -7,14 +7,12 @@
     <meta name="description" content="Chat with your study slides using StudyFlow">
     <meta name="author" content="StudyFlow">
     <!-- Lucide Icons CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/lucide@0.441.0/dist/umd/lucide.min.js"></script>
-    <!-- PDF.js CDN -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-
-    <script>
-        // Set PDF.js worker source
-        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-    </script>
+<!-- Replace CDN links -->
+<script src="/static/lucide.min.js"></script>
+<script src="/static/pdf.min.js"></script>
+<script>
+    pdfjsLib.GlobalWorkerOptions.workerSrc = '/static/pdf.worker.min.js';
+</script>
     <style>
         :root {
             --background: 0 0% 90%; /* Light Grey */
