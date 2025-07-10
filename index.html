@@ -15,7 +15,7 @@
         // Set PDF.js worker source
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
     </script>
-    
+
     <style>
         :root {
             --background: 0 0% 90%; /* Light Grey */
@@ -562,22 +562,19 @@
         <!-- Slides Viewer -->
         <div class="slides-container">
             <div class="slides-header">
-                <h2 class="title">Knowledge Base</h2>
-                <div class="controls">
-                    <div class="search">
-                        <i data-lucide="search" class="h-4 w-4"></i>
-                        <input type="text" id="slideSearch" placeholder="Search slides..." oninput="searchSlides()">
-                    </div>
-                    <div class="upload">
-                        <input type="file" id="pdfUpload" accept=".pdf" onchange="handlePDFUpload(event)">
-                    </div>
-                    <div class="view-toggle">
-                        <button id="gridView" class="active" onclick="setViewMode('grid')"><i data-lucide="grid" class="h-4 w-4"></i></button>
-                        <button id="listView" onclick="setViewMode('list')"><i data-lucide="list" class="h-4 w-4"></i></button>
-                    </div>
-                </div>
-                <span class="badge" id="selectionBadge">0 slides selected</span>
-            </div>
+    <h2 class="title">Knowledge Base</h2>
+    <div class="controls">
+        <div class="search">
+            <i data-lucide="search" class="h-4 w-4"></i>
+            <input type="text" id="slideSearch" placeholder="Search slides..." oninput="searchSlides()">
+        </div>
+        <div class="view-toggle">
+            <button id="gridView" class="active" onclick="setViewMode('grid')"><i data-lucide="grid" class="h-4 w-4"></i></button>
+            <button id="listView" onclick="setViewMode('list')"><i data-lucide="list" class="h-4 w-4"></i></button>
+        </div>
+    </div>
+    <span class="badge" id="selectionBadge">0 slides selected</span>
+</div>
             <div class="slides-content">
                 <div id="slidesContainer" class="slides-grid">
                     <div class="slide-card" data-id="1" onclick="toggleSlideSelection('1')">
@@ -638,28 +635,35 @@
         let pdfContent = {}; // Store text per PDF { id: [{ page, text }] }
         let selectedSlides = [];
 
-        async function loadPDFs() {
-            for (const pdf of pdfFiles) {
-                try {
-                    const response = await fetch(pdf.path);
-                    if (!response.ok) throw new Error(`Failed to fetch ${pdf.name}`);
-                    const arrayBuffer = await response.arrayBuffer();
-                    const typedArray = new Uint8Array(arrayBuffer);
-                    const pdfDoc = await pdfjsLib.getDocument(typedArray).promise;
-                    pdfContent[pdf.id] = [];
 
-                    for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++) {
-                        const page = await pdfDoc.getPage(pageNum);
-                        const textContent = await page.getTextContent();
-                        const text = textContent.items.map(item => item.str).join(' ');
-                        pdfContent[pdf.id].push({ page: pageNum, text });
-                    }
-                } catch (error) {
-                    console.error(`Error loading ${pdf.name}:`, error);
-                }
+async function loadPDFs() {
+    let loadErrors = [];
+    for (const pdf of pdfFiles) {
+        try {
+            const response = await fetch(pdf.path);
+            if (!response.ok) throw new Error(`Failed to fetch ${pdf.name}: ${response.statusText}`);
+            const arrayBuffer = await response.arrayBuffer();
+            const typedArray = new Uint8Array(arrayBuffer);
+            const pdfDoc = await pdfjsLib.getDocument(typedArray).promise;
+            pdfContent[pdf.id] = [];
+
+            for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++) {
+                const page = await pdfDoc.getPage(pageNum);
+                const textContent = await page.getTextContent();
+                const text = textContent.items.map(item => item.str).join(' ');
+                pdfContent[pdf.id].push({ page: pageNum, text });
             }
-            console.log('All PDFs processed');
+        } catch (error) {
+            console.error(`Error loading ${pdf.name}:`, error);
+            loadErrors.push(pdf.name);
         }
+    }
+    if (loadErrors.length > 0) {
+        alert(`Failed to load PDFs: ${loadErrors.join(', ')}. Please check the files and try again.`);
+    } else {
+        console.log('All PDFs processed');
+    }
+}
 
         async function handlePDFUpload(event) {
             const file = event.target.files[0];

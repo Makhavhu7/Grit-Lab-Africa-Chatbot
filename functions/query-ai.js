@@ -1,8 +1,32 @@
 const fetch = require('node-fetch');
 
 exports.handler = async function (event) {
-    const { question, context } = JSON.parse(event.body);
-    const API_TOKEN = process.env.HF_TOKEN; // Changed to HF_TOKEN
+    if (!event.body) {
+        return {
+            statusCode: 400,
+            body: JSON.stringify({ error: 'Request body is empty' })
+        };
+    }
+
+    let data;
+    try {
+        data = JSON.parse(event.body);
+    } catch (error) {
+        return {
+            statusCode: 400,
+            body: JSON.stringify({ error: 'Invalid JSON in request body' })
+        };
+    }
+
+    const { question, context } = data;
+    if (!question || !context) {
+        return {
+            statusCode: 400,
+            body: JSON.stringify({ error: 'Missing question or context in request body' })
+        };
+    }
+
+    const API_TOKEN = process.env.HF_TOKEN;
     const API_URL = 'https://api-inference.huggingface.co/models/distilbert-base-cased-distilled-squad';
 
     try {
