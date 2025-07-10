@@ -561,7 +561,8 @@
 
         <!-- Slides Viewer -->
         <div class="slides-container">
-            <div class="slides-header">
+  
+<div class="slides-header">
     <h2 class="title">Knowledge Base</h2>
     <div class="controls">
         <div class="search">
@@ -575,6 +576,7 @@
     </div>
     <span class="badge" id="selectionBadge">0 slides selected</span>
 </div>
+
             <div class="slides-content">
                 <div id="slidesContainer" class="slides-grid">
                     <div class="slide-card" data-id="1" onclick="toggleSlideSelection('1')">
@@ -621,297 +623,302 @@
         </div>
     </div>
 
-    <script>
-        // Initialize Lucide Icons
-        lucide.createIcons();
-
-        // PDF Handling
-        const pdfFiles = [
-            { id: '1', name: 'ACSSE_IFM02A2_Tut2.pdf', path: 'Grit-Lab-Africa-Chatbot/pdfs/Equations and Inequalities.pdf', pages: 15, size: '2.3 MB', date: '2024-06-01' },
-            { id: '2', name: 'IFM2A_Chapter1.pdf', path: 'Grit-Lab-Africa-Chatbot/pdfs/Mechanical Energy.pdf', pages: 12, size: '1.8 MB', date: '2024-06-02' },
-            { id: '3', name: 'ACSSE_IFM02A2_Chap11.pdf', path: 'Grit-Lab-Africa-Chatbot/pdfs/tRIGONOMETRY.pdf', pages: 20, size: '3.1 MB', date: '2024-06-03' }
-        ];
-
-        let pdfContent = {}; // Store text per PDF { id: [{ page, text }] }
-        let selectedSlides = [];
-
-
-async function loadPDFs() {
-    let loadErrors = [];
-    for (const pdf of pdfFiles) {
-        try {
-            const response = await fetch(pdf.path);
-            if (!response.ok) throw new Error(`Failed to fetch ${pdf.name}: ${response.statusText}`);
-            const arrayBuffer = await response.arrayBuffer();
-            const typedArray = new Uint8Array(arrayBuffer);
-            const pdfDoc = await pdfjsLib.getDocument(typedArray).promise;
-            pdfContent[pdf.id] = [];
-
-            for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++) {
-                const page = await pdfDoc.getPage(pageNum);
-                const textContent = await page.getTextContent();
-                const text = textContent.items.map(item => item.str).join(' ');
-                pdfContent[pdf.id].push({ page: pageNum, text });
-            }
-        } catch (error) {
-            console.error(`Error loading ${pdf.name}:`, error);
-            loadErrors.push(pdf.name);
-        }
-    }
-    if (loadErrors.length > 0) {
-        alert(`Failed to load PDFs: ${loadErrors.join(', ')}. Please check the files and try again.`);
-    } else {
-        console.log('All PDFs processed');
-    }
-}
-
     
-        function updateSlidesViewer() {
-            const container = document.getElementById('slidesContainer');
-            container.innerHTML = '';
-            pdfFiles.forEach(pdf => {
-                const slideCard = document.createElement('div');
-                slideCard.className = `slide-card ${selectedSlides.includes(pdf.id) ? 'selected' : ''}`;
-                slideCard.dataset.id = pdf.id;
-                slideCard.onclick = () => toggleSlideSelection(pdf.id);
-                slideCard.innerHTML = `
-                    <div class="thumbnail">
-                        <img src="https://via.placeholder.com/150" alt="${pdf.name}">
-                    </div>
-                    <div class="content">
-                        <h3 class="title">${pdf.name}</h3>
-                        <div class="meta">
-                            <span>${pdf.pages} pages</span>
-                            <span>${pdf.size}</span>
-                        </div>
-                        <div class="date">${pdf.date}</div>
-                    </div>
-                `;
-                container.appendChild(slideCard);
-            });
-            lucide.createIcons();
-        }
+<script>
+    // Initialize Lucide Icons
+    lucide.createIcons();
 
-        // Chat Interface Functions
+    // PDF Handling
+    const pdfFiles = [
+        { id: '1', name: 'ACSSE_IFM02A2_Tut2.pdf', path: 'pdfs/Equations and Inequalities.pdf', pages: 15, size: 'Unknown', date: '2024-06-01' },
+        { id: '2', name: 'IFM2A_Chapter1.pdf', path: 'pdfs/Mechanical Energy.pdf', pages: 12, size: 'Unknown', date: '2024-06-02' },
+        { id: '3', name: 'ACSSE_IFM02A2_Chap11.pdf', path: 'pdfs/tRIGONOMETRY.pdf', pages: 20, size: 'Unknown', date: '2024-06-03' }
+    ];
 
-async function handleSendMessage(event) {
-    event.preventDefault();
-    const input = document.getElementById('chatInput');
-    const message = input.value.trim();
-    if (!message) return;
+    let pdfContent = {};
+    let selectedSlides = [];
 
-    const messagesContainer = document.querySelector('.chat-messages');
-    const userMessage = document.createElement('div');
-    userMessage.className = 'message user';
-    userMessage.innerHTML = `
-        <div class="message-content">
-            <p>${message}</p>
-            <div class="meta">
-                <span>${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                <div class="actions">
-                    <button onclick="copyMessage('${message}')"><i data-lucide="copy" class="h-3 w-3"></i></button>
-                </div>
-            </div>
-        </div>
-        <div class="avatar"><i data-lucide="user" class="h-4 w-4"></i></div>
-    `;
-    messagesContainer.appendChild(userMessage);
-    input.value = '';
+    async function loadPDFs() {
+        let loadErrors = [];
+        for (const pdf of pdfFiles) {
+            try {
+                console.log(`Fetching PDF: ${pdf.path}`);
+                const response = await fetch(pdf.path);
+                if (!response.ok) throw new Error(`Failed to fetch ${pdf.name}: ${response.statusText}`);
+                const arrayBuffer = await response.arrayBuffer();
+                const typedArray = new Uint8Array(arrayBuffer);
+                const pdfDoc = await pdfjsLib.getDocument(typedArray).promise;
+                pdfContent[pdf.id] = [];
+                pdf.pages = pdfDoc.numPages;
 
-    // Show typing indicator
-    const typingIndicator = document.createElement('div');
-    typingIndicator.className = 'message bot typing-indicator';
-    typingIndicator.innerHTML = `
-        <div class="avatar"><i data-lucide="bot" class="h-4 w-4"></i></div>
-        <div class="flex space-x-1">
-            <div class="dot"></div>
-            <div class="dot"></div>
-            <div class="dot"></div>
-        </div>
-    `;
-    messagesContainer.appendChild(typingIndicator);
-    messagesContainer.scrollTop = messagesContainer.scrollHeight;
-
-    // Select context from selected slide or all PDFs
-    let context = '';
-    let relevantPage = 1;
-    let pdfName = '';
-    if (selectedSlides.length > 0) {
-        const selectedId = selectedSlides[0];
-        const selectedPdf = pdfContent[selectedId];
-        if (selectedPdf && selectedPdf.length > 0) {
-            for (const page of selectedPdf) {
-                if (page.text.toLowerCase().includes(message.toLowerCase())) {
-                    context = page.text.substring(0, 1000);
-                    relevantPage = page.page;
-                    pdfName = pdfFiles.find(pdf => pdf.id === selectedId).name;
-                    break;
+                for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++) {
+                    const page = await pdfDoc.getPage(pageNum);
+                    const textContent = await page.getTextContent();
+                    const text = textContent.items.map(item => item.str).join(' ');
+                    pdfContent[pdf.id].push({ page: pageNum, text });
                 }
+                console.log(`Loaded ${pdf.name}: ${pdfContent[pdf.id].length} pages`);
+            } catch (error) {
+                console.error(`Error loading ${pdf.name}:`, error);
+                loadErrors.push(pdf.name);
             }
-            if (!context) {
-                context = selectedPdf[0].text.substring(0, 1000);
-                pdfName = pdfFiles.find(pdf => pdf.id === selectedId).name;
-            }
+        }
+        if (loadErrors.length > 0) {
+            alert(`Failed to load PDFs: ${loadErrors.join(', ')}. Please check the files and try again.`);
         } else {
-            alert('Selected PDF content not loaded. Please try again.');
-            messagesContainer.removeChild(typingIndicator);
-            return;
-        }
-    } else {
-        for (const pdfId of Object.keys(pdfContent)) {
-            const pdfPages = pdfContent[pdfId];
-            if (pdfPages && pdfPages.length > 0) {
-                for (const page of pdfPages) {
-                    if (page.text.toLowerCase().includes(message.toLowerCase())) {
-                        context = page.text.substring(0, 1000);
-                        relevantPage = page.page;
-                        pdfName = pdfFiles.find(pdf => pdf.id === pdfId).name;
-                        break;
-                    }
-                }
-                if (context) break;
-            }
-        }
-        if (!context && Object.keys(pdfContent).length > 0) {
-            const firstPdfId = Object.keys(pdfContent)[0];
-            const firstPdfPages = pdfContent[firstPdfId];
-            if (firstPdfPages && firstPdfPages.length > 0) {
-                context = firstPdfPages[0].text.substring(0, 1000);
-                pdfName = pdfFiles.find(pdf => pdf.id === firstPdfId).name;
-            }
+            console.log('All PDFs processed');
+            console.log('pdfContent:', pdfContent);
+            updateSlidesViewer();
         }
     }
 
-    if (!context) {
-        alert('No PDF content available. Please ensure PDFs are loaded correctly.');
-        messagesContainer.removeChild(typingIndicator);
-        return;
-    }
-
-    // Query Hugging Face API via Netlify Function
-    try {
-        console.log('Sending payload:', { question: message, context }); // Debug
-        const response = await fetch('/.netlify/functions/query-ai', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ question: message, context })
+    function updateSlidesViewer() {
+        const container = document.getElementById('slidesContainer');
+        container.innerHTML = '';
+        pdfFiles.forEach(pdf => {
+            const slideCard = document.createElement('div');
+            slideCard.className = `slide-card ${selectedSlides.includes(pdf.id) ? 'selected' : ''}`;
+            slideCard.dataset.id = pdf.id;
+            slideCard.onclick = () => toggleSlideSelection(pdf.id);
+            slideCard.innerHTML = `
+                <div class="thumbnail">
+                    <img src="https://via.placeholder.com/150" alt="${pdf.name}">
+                </div>
+                <div class="content">
+                    <h3 class="title">${pdf.name}</h3>
+                    <div class="meta">
+                        <span>${pdf.pages} pages</span>
+                        <span>${pdf.size}</span>
+                    </div>
+                    <div class="date">${pdf.date}</div>
+                </div>
+            `;
+            container.appendChild(slideCard);
         });
-        const result = await response.json();
-        if (result.error) {
-            throw new Error(result.error);
-        }
-        const answer = result.answer || 'Sorry, I couldn’t find a clear answer.';
-        const botMessage = document.createElement('div');
-        botMessage.className = 'message bot';
-        botMessage.innerHTML = `
-            <div class="avatar"><i data-lucide="bot" class="h-4 w-4"></i></div>
+        lucide.createIcons();
+    }
+
+    async function handleSendMessage(event) {
+        event.preventDefault();
+        const input = document.getElementById('chatInput');
+        const message = input.value.trim();
+        if (!message) return;
+
+        const messagesContainer = document.querySelector('.chat-messages');
+        const userMessage = document.createElement('div');
+        userMessage.className = 'message user';
+        userMessage.innerHTML = `
             <div class="message-content">
-                <p>${answer} (See ${pdfName}, slide ${relevantPage})</p>
+                <p>${message}</p>
                 <div class="meta">
                     <span>${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                     <div class="actions">
-                        <button onclick="handleReaction('temp', 'like')"><i data-lucide="thumbs-up" class="h-3 w-3"></i></button>
-                        <button onclick="handleReaction('temp', 'dislike')"><i data-lucide="thumbs-down" class="h-3 w-3"></i></button>
-                        <button onclick="regenerateResponse('temp')"><i data-lucide="rotate-ccw" class="h-3 w-3"></i></button>
-                        <button onclick="copyMessage('${answer}')"><i data-lucide="copy" class="h-3 w-3"></i></button>
+                        <button onclick="copyMessage('${message}')"><i data-lucide="copy" class="h-3 w-3"></i></button>
                     </div>
                 </div>
             </div>
+            <div class="avatar"><i data-lucide="user" class="h-4 w-4"></i></div>
         `;
-        messagesContainer.removeChild(typingIndicator);
-        messagesContainer.appendChild(botMessage);
+        messagesContainer.appendChild(userMessage);
+        input.value = '';
+
+        const typingIndicator = document.createElement('div');
+        typingIndicator.className = 'message bot typing-indicator';
+        typingIndicator.innerHTML = `
+            <div class="avatar"><i data-lucide="bot" class="h-4 w-4"></i></div>
+            <div class="flex space-x-1">
+                <div class="dot"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+            </div>
+        `;
+        messagesContainer.appendChild(typingIndicator);
         messagesContainer.scrollTop = messagesContainer.scrollHeight;
-        lucide.createIcons();
-    } catch (error) {
-        console.error('Error querying AI:', error);
-        alert(`Error querying AI: ${error.message}. Please try again.`);
-        messagesContainer.removeChild(typingIndicator);
+
+        let context = '';
+        let relevantPage = 1;
+        let pdfName = '';
+        console.log('pdfContent:', pdfContent);
+        console.log('selectedSlides:', selectedSlides);
+        if (selectedSlides.length > 0) {
+            const selectedId = selectedSlides[0];
+            const selectedPdf = pdfContent[selectedId];
+            console.log('Selected PDF content:', selectedPdf);
+            if (selectedPdf && selectedPdf.length > 0) {
+                for (const page of selectedPdf) {
+                    if (page.text.toLowerCase().includes(message.toLowerCase())) {
+                        context = page.text.substring(0, 1000);
+                        relevantPage = page.page;
+                        pdfName = pdfFiles.find(pdf => pdf.id === selectedId).name;
+                        break;
+                    }
+                }
+                if (!context) {
+                    context = selectedPdf[0].text.substring(0, 1000);
+                    pdfName = pdfFiles.find(pdf => pdf.id === selectedId).name;
+                }
+            } else {
+                console.log('No content for selected PDF:', selectedId);
+                alert('Selected PDF content not loaded. Please ensure PDFs are loaded correctly.');
+                messagesContainer.removeChild(typingIndicator);
+                return;
+            }
+        } else {
+            console.log('No slide selected, searching all PDFs');
+            for (const pdfId of Object.keys(pdfContent)) {
+                const pdfPages = pdfContent[pdfId];
+                if (pdfPages && pdfPages.length > 0) {
+                    for (const page of pdfPages) {
+                        if (page.text.toLowerCase().includes(message.toLowerCase())) {
+                            context = page.text.substring(0, 1000);
+                            relevantPage = page.page;
+                            pdfName = pdfFiles.find(pdf => pdf.id === pdfId).name;
+                            break;
+                        }
+                    }
+                    if (context) break;
+                }
+            }
+            if (!context && Object.keys(pdfContent).length > 0) {
+                const firstPdfId = Object.keys(pdfContent)[0];
+                const firstPdfPages = pdfContent[firstPdfId];
+                if (firstPdfPages && firstPdfPages.length > 0) {
+                    context = firstPdfPages[0].text.substring(0, 1000);
+                    pdfName = pdfFiles.find(pdf => pdf.id === firstPdfId).name;
+                }
+            }
+        }
+
+        if (!context) {
+            console.log('No context found');
+            alert('No PDF content available. Please ensure PDFs are loaded correctly.');
+            messagesContainer.removeChild(typingIndicator);
+            return;
+        }
+
+        try {
+            const payload = { question: message, context };
+            console.log('Sending payload:', JSON.stringify(payload));
+            const response = await fetch('/.netlify/functions/query-ai', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to query AI');
+            }
+            const result = await response.json();
+            const answer = result.answer || 'Sorry, I couldn’t find a clear answer.';
+            const botMessage = document.createElement('div');
+            botMessage.className = 'message bot';
+            botMessage.innerHTML = `
+                <div class="avatar"><i data-lucide="bot" class="h-4 w-4"></i></div>
+                <div class="message-content">
+                    <p>${answer} (See ${pdfName}, slide ${relevantPage})</p>
+                    <div class="meta">
+                        <span>${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                        <div class="actions">
+                            <button onclick="handleReaction('temp', 'like')"><i data-lucide="thumbs-up" class="h-3 w-3"></i></button>
+                            <button onclick="handleReaction('temp', 'dislike')"><i data-lucide="thumbs-down" class="h-3 w-3"></i></button>
+                            <button onclick="regenerateResponse('temp')"><i data-lucide="rotate-ccw" class="h-3 w-3"></i></button>
+                            <button onclick="copyMessage('${answer}')"><i data-lucide="copy" class="h-3 w-3"></i></button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            messagesContainer.removeChild(typingIndicator);
+            messagesContainer.appendChild(botMessage);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            lucide.createIcons();
+        } catch (error) {
+            console.error('Error querying AI:', error);
+            alert(`Error querying AI: ${error.message}. Please try again.`);
+            messagesContainer.removeChild(typingIndicator);
+        }
     }
-}
 
-
-        function handleKeyPress(event) {
-            if (event.key === 'Enter' && !event.shiftKey) {
-                event.preventDefault();
-                handleSendMessage(event);
-            }
+    function handleKeyPress(event) {
+        if (event.key === 'Enter' && !event.shiftKey) {
+            event.preventDefault();
+            handleSendMessage(event);
         }
+    }
 
-        function setInput(text) {
-            document.getElementById('chatInput').value = text;
+    function setInput(text) {
+        document.getElementById('chatInput').value = text;
+    }
+
+    function copyMessage(content) {
+        navigator.clipboard.writeText(content);
+        alert('Message copied to clipboard!');
+    }
+
+    function handleReaction(id, reaction) {
+        const button = event.target.closest('button');
+        if (reaction === 'like') {
+            button.style.color = button.style.color === 'rgb(74, 222, 128)' ? '' : '#4ade80';
+        } else {
+            button.style.color = button.style.color === 'rgb(248, 113, 113)' ? '' : '#f87171';
         }
+        alert(reaction === 'like' ? 'Thanks for the feedback!' : 'Feedback received');
+    }
 
-        function copyMessage(content) {
-            navigator.clipboard.writeText(content);
-            alert('Message copied to clipboard!');
-        }
+    function regenerateResponse(id) {
+        alert('Regenerating response...');
+    }
 
-        function handleReaction(id, reaction) {
-            const button = event.target.closest('button');
-            if (reaction === 'like') {
-                button.style.color = button.style.color === 'rgb(74, 222, 128)' ? '' : '#4ade80';
-            } else {
-                button.style.color = button.style.color === 'rgb(248, 113, 113)' ? '' : '#f87171';
-            }
-            alert(reaction === 'like' ? 'Thanks for the feedback!' : 'Feedback received');
-        }
+    let viewMode = 'grid';
 
-        function regenerateResponse(id) {
-            alert('Regenerating response...');
-        }
-
-        // Slides Viewer Functions
-        let viewMode = 'grid';
-
-        function setViewMode(mode) {
-            viewMode = mode;
-            const gridButton = document.getElementById('gridView');
-            const listButton = document.getElementById('listView');
-            const container = document.getElementById('slidesContainer');
-            if (mode === 'grid') {
-                gridButton.classList.add('active');
-                listButton.classList.remove('active');
-                container.className = 'slides-grid';
-                document.querySelectorAll('.slide-card').forEach(card => {
-                    card.classList.remove('list');
-                });
-            } else {
-                listButton.classList.add('active');
-                gridButton.classList.remove('active');
-                container.className = 'slides-list';
-                document.querySelectorAll('.slide-card').forEach(card => {
-                    card.classList.add('list');
-                });
-            }
-        }
-
-        function searchSlides() {
-            const searchTerm = document.getElementById('slideSearch').value.toLowerCase();
+    function setViewMode(mode) {
+        viewMode = mode;
+        const gridButton = document.getElementById('gridView');
+        const listButton = document.getElementById('listView');
+        const container = document.getElementById('slidesContainer');
+        if (mode === 'grid') {
+            gridButton.classList.add('active');
+            listButton.classList.remove('active');
+            container.className = 'slides-grid';
             document.querySelectorAll('.slide-card').forEach(card => {
-                const title = card.querySelector('.title').textContent.toLowerCase();
-                card.style.display = title.includes(searchTerm) ? '' : 'none';
+                card.classList.remove('list');
+            });
+        } else {
+            listButton.classList.add('active');
+            gridButton.classList.remove('active');
+            container.className = 'slides-list';
+            document.querySelectorAll('.slide-card').forEach(card => {
+                card.classList.add('list');
             });
         }
+    }
 
-        function toggleSlideSelection(id) {
-            const card = document.querySelector(`.slide-card[data-id="${id}"]`);
-            if (selectedSlides.includes(id)) {
-                selectedSlides = selectedSlides.filter(slideId => slideId !== id);
-                card.classList.remove('selected');
-            } else {
-                selectedSlides = [id]; // Single selection for simplicity
-                document.querySelectorAll('.slide-card').forEach(c => c.classList.remove('selected'));
-                card.classList.add('selected');
-            }
-            const badge = document.getElementById('selectionBadge');
-            badge.textContent = `${selectedSlides.length} slide${selectedSlides.length !== 1 ? 's' : ''} selected`;
-            badge.style.display = selectedSlides.length > 0 ? 'inline-block' : 'none';
+    function searchSlides() {
+        const searchTerm = document.getElementById('slideSearch').value.toLowerCase();
+        document.querySelectorAll('.slide-card').forEach(card => {
+            const title = card.querySelector('.title').textContent.toLowerCase();
+            card.style.display = title.includes(searchTerm) ? '' : 'none';
+        });
+    }
+
+    function toggleSlideSelection(id) {
+        const card = document.querySelector(`.slide-card[data-id="${id}"]`);
+        if (selectedSlides.includes(id)) {
+            selectedSlides = selectedSlides.filter(slideId => slideId !== id);
+            card.classList.remove('selected');
+        } else {
+            selectedSlides = [id];
+            document.querySelectorAll('.slide-card').forEach(c => c.classList.remove('selected'));
+            card.classList.add('selected');
         }
+        const badge = document.getElementById('selectionBadge');
+        badge.textContent = `${selectedSlides.length} slide${selectedSlides.length !== 1 ? 's' : ''} selected`;
+        badge.style.display = selectedSlides.length > 0 ? 'inline-block' : 'none';
+    }
 
-        // Load PDFs on page load
-        window.onload = function () {
-            loadPDFs();
-        };
-    </script>
+    window.onload = function () {
+        loadPDFs();
+    };
+</script>
+
 </body>
 </html>
