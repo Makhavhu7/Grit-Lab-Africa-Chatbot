@@ -40,7 +40,8 @@ exports.handler = async function (event) {
         };
     }
 
-const API_URL = `https://api-inference.huggingface.co/models/deepseek-ai/DeepSeek-V3-0324`;
+    const API_URL = 'https://router.huggingface.co/v1/chat/completions';
+
     try {
         console.log('Calling Hugging Face API with model:', model);
         const response = await fetch(API_URL, {
@@ -52,18 +53,21 @@ const API_URL = `https://api-inference.huggingface.co/models/deepseek-ai/DeepSee
             body: JSON.stringify({ model, messages, stream: false })
         });
         console.log('Hugging Face response status:', response.status, 'statusText:', response.statusText);
-        let result;
-        try {
-            result = await response.json();
-        } catch (e) {
-            const text = await response.text();
-            console.log('Non-JSON response:', text);
-            throw new Error(`Invalid response from API: ${text}`);
-        }
+
         if (!response.ok) {
-            console.log('Hugging Face error response:', JSON.stringify(result, null, 2));
-            throw new Error(JSON.stringify(result.error || { message: `Hugging Face API returned ${response.status}: ${response.statusText}` }));
+            let errorData;
+            try {
+                errorData = await response.json();
+                console.log('Hugging Face error response:', JSON.stringify(errorData, null, 2));
+            } catch (e) {
+                const text = await response.text();
+                console.log('Non-JSON response:', text);
+                errorData = { error: `HTTP ${response.status}`, details: text };
+            }
+            throw new Error(JSON.stringify(errorData, null, 2));
         }
+
+        const result = await response.json();
         console.log('Hugging Face response:', JSON.stringify(result, null, 2));
         return {
             statusCode: 200,
