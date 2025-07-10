@@ -15,33 +15,48 @@
         // Set PDF.js worker source
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
     </script>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grit Lab - Chat with Slides</title>
+    <meta name="description" content="Chat with your study slides using StudyFlow">
+    <meta name="author" content="StudyFlow">
+    <!-- Lucide Icons Local -->
+    <script src="/static/lucide.min.js"></script>
+    <!-- PDF.js Local -->
+    <script src="/static/pdf.min.js"></script>
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = '/static/pdf.worker.min.js';
+    </script>
     <style>
         :root {
-            --background: 0 0% 90%; /* Light Grey */
-            --foreground: 0 0% 0%; /* Black */
-            --card: 0 0% 90%; /* Light Grey */
-            --card-foreground: 0 0% 0%; /* Black */
-            --primary: 43.3 96% 22.7%; /* DarkGoldenRod */
-            --primary-foreground: 0 0% 100%; /* White */
-            --secondary: 0 0% 90%; /* Light Grey */
-            --secondary-foreground: 0 0% 0%; /* Black */
-            --muted: 0 0% 80%; /* Slightly Darker Light Grey */
-            --muted-foreground: 0 0% 20%; /* Dark Grey */
-            --accent: 43.3 96% 22.7%; /* DarkGoldenRod */
-            --accent-foreground: 0 0% 100%; /* White */
-            --destructive: 0 62.8% 30.6%; /* Keeping original destructive color */
-            --destructive-foreground: 0 0% 100%; /* White */
-            --border: 0 0% 80%; /* Light Grey */
-            --input: 0 0% 80%; /* Light Grey */
-            --ring: 43.3 96% 22.7%; /* DarkGoldenRod */
-            --sidebar-background: 0 0% 20%; /* Dark Grey */
-            --sidebar-foreground: 0 0% 100%; /* White */
-            --sidebar-primary: 43.3 96% 22.7%; /* DarkGoldenRod */
-            --sidebar-primary-foreground: 0 0% 100%; /* White */
-            --sidebar-accent: 0 0% 30%; /* Darker Grey */
-            --sidebar-accent-foreground: 0 0% 100%; /* White */
-            --sidebar-border: 0 0% 30%; /* Darker Grey */
-            --sidebar-ring: 43.3 96% 22.7%; /* DarkGoldenRod */
+            --background: 0 0% 90%;
+            --foreground: 0 0% 0%;
+            --card: 0 0% 90%;
+            --card-foreground: 0 0% 0%;
+            --primary: 43.3 96% 22.7%;
+            --primary-foreground: 0 0% 100%;
+            --secondary: 0 0% 90%;
+            --secondary-foreground: 0 0% 0%;
+            --muted: 0 0% 80%;
+            --muted-foreground: 0 0% 20%;
+            --accent: 43.3 96% 22.7%;
+            --accent-foreground: 0 0% 100%;
+            --destructive: 0 62.8% 30.6%;
+            --destructive-foreground: 0 0% 100%;
+            --border: 0 0% 80%;
+            --input: 0 0% 80%;
+            --ring: 43.3 96% 22.7%;
+            --sidebar-background: 0 0% 20%;
+            --sidebar-foreground: 0 0% 100%;
+            --sidebar-primary: 43.3 96% 22.7%;
+            --sidebar-primary-foreground: 0 0% 100%;
+            --sidebar-accent: 0 0% 30%;
+            --sidebar-accent-foreground: 0 0% 100%;
+            --sidebar-border: 0 0% 30%;
+            --sidebar-ring: 43.3 96% 22.7%;
             --radius: 0.5rem;
         }
         body {
@@ -549,51 +564,12 @@
             </div>
             <div class="slides-content">
                 <div id="slidesContainer" class="slides-grid">
-                    <div class="slide-card" data-id="1" onclick="toggleSlideSelection('1')">
-                        <div class="thumbnail">
-                            <img src="https://via.placeholder.com/150" alt="ACSSE_IFM02A2_Tut2.pdf">
-                        </div>
-                        <div class="content">
-                            <h3 class="title">ACSSE_IFM02A2_Tut2.pdf</h3>
-                            <div class="meta">
-                                <span>5 pages</span>
-                                <span>Unknown</span>
-                            </div>
-                            <div class="date">2024-06-01</div>
-                        </div>
-                    </div>
-                    <div class="slide-card" data-id="2" onclick="toggleSlideSelection('2')">
-                        <div class="thumbnail">
-                            <img src="https://via.placeholder.com/150" alt="IFM2A_Chapter1.pdf">
-                        </div>
-                        <div class="content">
-                            <h3 class="title">IFM2A_Chapter1.pdf</h3>
-                            <div class="meta">
-                                <span>7 pages</span>
-                                <span>Unknown</span>
-                            </div>
-                            <div class="date">2024-06-02</div>
-                        </div>
-                    </div>
-                    <div class="slide-card" data-id="3" onclick="toggleSlideSelection('3')">
-                        <div class="thumbnail">
-                            <img src="https://via.placeholder.com/150" alt="ACSSE_IFM02A2_Chap11.pdf">
-                        </div>
-                        <div class="content">
-                            <h3 class="title">ACSSE_IFM02A2_Chap11.pdf</h3>
-                            <div class="meta">
-                                <span>7 pages</span>
-                                <span>Unknown</span>
-                            </div>
-                            <div class="date">2024-06-03</div>
-                        </div>
-                    </div>
+                    <!-- Slides will be dynamically populated -->
                 </div>
             </div>
         </div>
     </div>
-  
-<script>
+    <script>
         lucide.createIcons();
         const pdfFiles = [
             { id: '1', name: 'ACSSE_IFM02A2_Tut2.pdf', path: 'pdfs/Equations and Inequalities.pdf', pages: 5, size: 'Unknown', date: '2024-06-01' },
@@ -757,13 +733,14 @@
             }
             try {
                 const payload = {
-                    model: 'deepseek-ai/DeepSeek-V3',
+                    model: 'gpt-4o',
                     messages: [
-                        { role: 'system', content: 'You are a helpful assistant providing accurate answers based on the provided context.' },
+                        { role: 'system', content: 'You are a helpful assistant providing accurate, detailed answers based on the provided context. Use the context to inform your response and provide clear, educational explanations.' },
                         { role: 'user', content: `${message}\n\nContext: ${context}` }
                     ],
                     stream: false,
-                    temperature: 0.3
+                    temperature: 0.3,
+                    max_tokens: 512
                 };
                 console.log('Sending payload:', JSON.stringify(payload));
                 const response = await fetch('/.netlify/functions/query-ai', {
@@ -779,12 +756,12 @@
                         errorData = { error: `HTTP ${response.status}`, details: await response.text() };
                     }
                     let errorMessage = errorData.error?.message || JSON.stringify(errorData, null, 2);
-                    if (errorData.error?.code === 'model_not_supported') {
-                        errorMessage = `The model 'deepseek-ai/DeepSeek-V3' is not supported by Together AI. Please check your API key or try a different model.`;
+                    if (errorData.error?.type === 'invalid_request_error') {
+                        errorMessage = `Invalid request to Portkey AI. Check your API key, virtual key, or model availability at https://portkey.ai. Falling back to Together AI.`;
                     } else if (response.status === 429) {
-                        errorMessage = `Rate limit exceeded (60 RPM). Please wait or upgrade your Together AI plan at https://www.together.ai.`;
+                        errorMessage = `Portkey AI rate limit exceeded. Check your quota at https://portkey.ai. Falling back to Together AI.`;
                     } else if (response.status === 401) {
-                        errorMessage = `Unauthorized: Invalid TOGETHER_API_KEY. Please verify your API key in Netlify environment variables.`;
+                        errorMessage = `Unauthorized: Invalid PORTKEY_API_KEY or virtual key. Verify at https://portkey.ai. Falling back to Together AI.`;
                     }
                     throw new Error(errorMessage);
                 }
@@ -813,7 +790,7 @@
                 lucide.createIcons();
             } catch (error) {
                 console.error('Error querying AI:', error);
-                alert(`Error querying AI: ${error.message}. Please try again or contact support.`);
+                alert(`Error querying AI: ${error.message}`);
                 messagesContainer.removeChild(typingIndicator);
             }
         }
@@ -898,7 +875,5 @@
             loadPDFs();
         };
     </script>
-
-
 </body>
 </html>
