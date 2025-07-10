@@ -613,45 +613,6 @@
                             <div class="date">2024-06-03</div>
                         </div>
                     </div>
-                    <div class="slide-card" data-id="4" onclick="toggleSlideSelection('4')">
-                        <div class="thumbnail">
-                            <img src="https://via.placeholder.com/150" alt="Cheat_Sheet.pdf">
-                        </div>
-                        <div class="content">
-                            <h3 class="title">Cheat_Sheet.pdf</h3>
-                            <div class="meta">
-                                <span>8 pages</span>
-                                <span>0.9 MB</span>
-                            </div>
-                            <div class="date">2024-06-04</div>
-                        </div>
-                    </div>
-                    <div class="slide-card" data-id="5" onclick="toggleSlideSelection('5')">
-                        <div class="thumbnail">
-                            <img src="https://via.placeholder.com/150" alt="ACSSE_IFM02A2_Chap5.pdf">
-                        </div>
-                        <div class="content">
-                            <h3 class="title">ACSSE_IFM02A2_Chap5.pdf</h3>
-                            <div class="meta">
-                                <span>18 pages</span>
-                                <span>2.7 MB</span>
-                            </div>
-                            <div class="date">2024-06-05</div>
-                        </div>
-                    </div>
-                    <div class="slide-card" data-id="6" onclick="toggleSlideSelection('6')">
-                        <div class="thumbnail">
-                            <img src="https://via.placeholder.com/150" alt="ACSSE_IFM02A2_Chap10.pdf">
-                        </div>
-                        <div class="content">
-                            <h3 class="title">ACSSE_IFM02A2_Chap10.pdf</h3>
-                            <div class="meta">
-                                <span>16 pages</span>
-                                <span>2.1 MB</span>
-                            </div>
-                            <div class="date">2024-06-06</div>
-                        </div>
-                    </div>
                 </div>
             </div>
         </div>
@@ -663,13 +624,11 @@
 
         // PDF Handling
         const pdfFiles = [
-            { id: '1', name: 'ACSSE_IFM02A2_Tut2.pdf', path: '/pdfs/ACSSE_IFM02A2_Tut2.pdf', pages: 15, size: '2.3 MB', date: '2024-06-01' },
-            { id: '2', name: 'IFM2A_Chapter1.pdf', path: '/pdfs/IFM2A_Chapter1.pdf', pages: 12, size: '1.8 MB', date: '2024-06-02' },
-            { id: '3', name: 'ACSSE_IFM02A2_Chap11.pdf', path: '/pdfs/ACSSE_IFM02A2_Chap11.pdf', pages: 20, size: '3.1 MB', date: '2024-06-03' },
-            { id: '4', name: 'Cheat_Sheet.pdf', path: '/pdfs/Cheat_Sheet.pdf', pages: 8, size: '0.9 MB', date: '2024-06-04' },
-            { id: '5', name: 'ACSSE_IFM02A2_Chap5.pdf', path: '/pdfs/ACSSE_IFM02A2_Chap5.pdf', pages: 18, size: '2.7 MB', date: '2024-06-05' },
-            { id: '6', name: 'ACSSE_IFM02A2_Chap10.pdf', path: '/pdfs/ACSSE_IFM02A2_Chap10.pdf', pages: 16, size: '2.1 MB', date: '2024-06-06' }
+            { id: '1', name: 'ACSSE_IFM02A2_Tut2.pdf', path: 'pdfs/Equations and Inequalities.pdf', pages: 15, size: '2.3 MB', date: '2024-06-01' },
+            { id: '2', name: 'IFM2A_Chapter1.pdf', path: 'pdfs/Mechanical Energy.pdf', pages: 12, size: '1.8 MB', date: '2024-06-02' },
+            { id: '3', name: 'ACSSE_IFM02A2_Chap11.pdf', path: 'pdfs/tRIGONOMETRY.pdf', pages: 20, size: '3.1 MB', date: '2024-06-03' }
         ];
+
         let pdfContent = {}; // Store text per PDF { id: [{ page, text }] }
         let selectedSlides = [];
 
