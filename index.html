@@ -10,6 +10,7 @@
     <script src="https://cdn.jsdelivr.net/npm/lucide@0.441.0/dist/umd/lucide.min.js"></script>
     <!-- PDF.js CDN -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+
     <script>
         // Set PDF.js worker source
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
@@ -657,149 +658,154 @@
             });
             lucide.createIcons();
         }
+
+
+
+
         async function handleSendMessage(event) {
-            event.preventDefault();
-            const input = document.getElementById('chatInput');
-            const message = input.value.trim();
-            if (!message) return;
-            const messagesContainer = document.querySelector('.chat-messages');
-            const userMessage = document.createElement('div');
-            userMessage.className = 'message user';
-            userMessage.innerHTML = `
-                <div class="message-content">
-                    <p>${message}</p>
-                    <div class="meta">
-                        <span>${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                        <div class="actions">
-                            <button onclick="copyMessage('${message}')"><i data-lucide="copy" class="h-3 w-3"></i></button>
-                        </div>
-                    </div>
+    event.preventDefault();
+    const input = document.getElementById('chatInput');
+    const message = input.value.trim();
+    if (!message) return;
+    const messagesContainer = document.querySelector('.chat-messages');
+    const userMessage = document.createElement('div');
+    userMessage.className = 'message user';
+    userMessage.innerHTML = `
+        <div class="message-content">
+            <p>${message}</p>
+            <div class="meta">
+                <span>${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                <div class="actions">
+                    <button onclick="copyMessage('${message}')"><i data-lucide="copy" class="h-3 w-3"></i></button>
                 </div>
-                <div class="avatar"><i data-lucide="user" class="h-4 w-4"></i></div>
-            `;
-            messagesContainer.appendChild(userMessage);
-            input.value = '';
-            const typingIndicator = document.createElement('div');
-            typingIndicator.className = 'message bot typing-indicator';
-            typingIndicator.innerHTML = `
-                <div class="avatar"><i data-lucide="bot" class="h-4 w-4"></i></div>
-                <div class="flex space-x-1">
-                    <div class="dot"></div>
-                    <div class="dot"></div>
-                    <div class="dot"></div>
-                </div>
-            `;
-            messagesContainer.appendChild(typingIndicator);
-            messagesContainer.scrollTop = messagesContainer.scrollHeight;
-            let context = '';
-            let relevantPage = 1;
-            let pdfName = '';
-            console.log('pdfContent:', pdfContent);
-            console.log('selectedSlides:', selectedSlides);
-            if (selectedSlides.length > 0) {
-                const selectedId = selectedSlides[0];
-                const selectedPdf = pdfContent[selectedId];
-                console.log('Selected PDF content:', selectedPdf);
-                if (selectedPdf && selectedPdf.length > 0) {
-                    for (const page of selectedPdf) {
-                        if (page.text.toLowerCase().includes(message.toLowerCase())) {
-                            context = page.text.substring(0, 1000);
-                            relevantPage = page.page;
-                            pdfName = pdfFiles.find(pdf => pdf.id === selectedId).name;
-                            break;
-                        }
-                    }
-                    if (!context) {
-                        context = selectedPdf[0].text.substring(0, 1000);
-                        pdfName = pdfFiles.find(pdf => pdf.id === selectedId).name;
-                    }
-                } else {
-                    console.log('No content for selected PDF:', selectedId);
-                    alert('Selected PDF content not loaded. Please ensure PDFs are loaded correctly.');
-                    messagesContainer.removeChild(typingIndicator);
-                    return;
-                }
-            } else {
-                console.log('No slide selected, searching all PDFs');
-                for (const pdfId of Object.keys(pdfContent)) {
-                    const pdfPages = pdfContent[pdfId];
-                    if (pdfPages && pdfPages.length > 0) {
-                        for (const page of pdfPages) {
-                            if (page.text.toLowerCase().includes(message.toLowerCase())) {
-                                context = page.text.substring(0, 1000);
-                                relevantPage = page.page;
-                                pdfName = pdfFiles.find(pdf => pdf.id === pdfId).name;
-                                break;
-                            }
-                        }
-                        if (context) break;
-                    }
-                }
-                if (!context && Object.keys(pdfContent).length > 0) {
-                    const firstPdfId = Object.keys(pdfContent)[0];
-                    const firstPdfPages = pdfContent[firstPdfId];
-                    if (firstPdfPages && firstPdfPages.length > 0) {
-                        context = firstPdfPages[0].text.substring(0, 1000);
-                        pdfName = pdfFiles.find(pdf => pdf.id === firstPdfId).name;
-                    }
+            </div>
+        </div>
+        <div class="avatar"><i data-lucide="user" class="h-4 w-4"></i></div>
+    `;
+    messagesContainer.appendChild(userMessage);
+    input.value = '';
+    const typingIndicator = document.createElement('div');
+    typingIndicator.className = 'message bot typing-indicator';
+    typingIndicator.innerHTML = `
+        <div class="avatar"><i data-lucide="bot" class="h-4 w-4"></i></div>
+        <div class="flex space-x-1">
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+        </div>
+    `;
+    messagesContainer.appendChild(typingIndicator);
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    let context = '';
+    let relevantPage = 1;
+    let pdfName = '';
+    console.log('pdfContent:', pdfContent);
+    console.log('selectedSlides:', selectedSlides);
+    if (selectedSlides.length > 0) {
+        const selectedId = selectedSlides[0];
+        const selectedPdf = pdfContent[selectedId];
+        console.log('Selected PDF content:', selectedPdf);
+        if (selectedPdf && selectedPdf.length > 0) {
+            for (const page of selectedPdf) {
+                if (page.text.toLowerCase().includes(message.toLowerCase())) {
+                    context = page.text.substring(0, 1000);
+                    relevantPage = page.page;
+                    pdfName = pdfFiles.find(pdf => pdf.id === selectedId).name;
+                    break;
                 }
             }
             if (!context) {
-                console.log('No context found');
-                alert('No PDF content available. Please ensure PDFs are loaded correctly.');
-                messagesContainer.removeChild(typingIndicator);
-                return;
+                context = selectedPdf[0].text.substring(0, 1000);
+                pdfName = pdfFiles.find(pdf => pdf.id === selectedId).name;
             }
-            try {
-                const payload = {
-                    model: 'deepseek-ai/DeepSeek-V3-0324',
-                    messages: [{ role: 'user', content: `${message}\n\nContext: ${context}` }],
-                    stream: false
-                };
-                console.log('Sending payload:', JSON.stringify(payload));
-                const response = await fetch('/.netlify/functions/query-ai', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-                if (!response.ok) {
-                    let errorData;
-                    try {
-                        errorData = await response.json();
-                    } catch (e) {
-                        errorData = { error: `HTTP ${response.status}`, details: await response.text() };
+        } else {
+            console.log('No content for selected PDF:', selectedId);
+            alert('Selected PDF content not loaded. Please ensure PDFs are loaded correctly.');
+            messagesContainer.removeChild(typingIndicator);
+            return;
+        }
+    } else {
+        console.log('No slide selected, searching all PDFs');
+        for (const pdfId of Object.keys(pdfContent)) {
+            const pdfPages = pdfContent[pdfId];
+            if (pdfPages && pdfPages.length > 0) {
+                for (const page of pdfPages) {
+                    if (page.text.toLowerCase().includes(message.toLowerCase())) {
+                        context = page.text.substring(0, 1000);
+                        relevantPage = page.page;
+                        pdfName = pdfFiles.find(pdf => pdf.id === pdfId).name;
+                        break;
                     }
-                    throw new Error(errorData.details || errorData.error || `Failed to query AI (Status: ${response.status})`);
                 }
-                const result = await response.json();
-                const answer = result.choices?.[0]?.message?.content || 'Sorry, I couldn’t find a clear answer.';
-                const botMessage = document.createElement('div');
-                botMessage.className = 'message bot';
-                botMessage.innerHTML = `
-                    <div class="avatar"><i data-lucide="bot" class="h-4 w-4"></i></div>
-                    <div class="message-content">
-                        <p>${answer} (See ${pdfName}, slide ${relevantPage})</p>
-                        <div class="meta">
-                            <span>${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                            <div class="actions">
-                                <button onclick="handleReaction('temp', 'like')"><i data-lucide="thumbs-up" class="h-3 w-3"></i></button>
-                                <button onclick="handleReaction('temp', 'dislike')"><i data-lucide="thumbs-down" class="h-3 w-3"></i></button>
-                                <button onclick="regenerateResponse('temp')"><i data-lucide="rotate-ccw" class="h-3 w-3"></i></button>
-                                <button onclick="copyMessage('${answer}')"><i data-lucide="copy" class="h-3 w-3"></i></button>
-                            </div>
-                        </div>
-                    </div>
-                `;
-                messagesContainer.removeChild(typingIndicator);
-                messagesContainer.appendChild(botMessage);
-                messagesContainer.scrollTop = messagesContainer.scrollHeight;
-                lucide.createIcons();
-            } catch (error) {
-                console.error('Error querying AI:', error);
-                alert(`Error querying AI: ${error.message}. Please try again.`);
-                messagesContainer.removeChild(typingIndicator);
+                if (context) break;
             }
         }
+        if (!context && Object.keys(pdfContent).length > 0) {
+            const firstPdfId = Object.keys(pdfContent)[0];
+            const firstPdfPages = pdfContent[firstPdfId];
+            if (firstPdfPages && firstPdfPages.length > 0) {
+                context = firstPdfPages[0].text.substring(0, 1000);
+                pdfName = pdfFiles.find(pdf => pdf.id === firstPdfId).name;
+            }
+        }
+    }
+    if (!context) {
+        console.log('No context found');
+        alert('No PDF content available. Please ensure PDFs are loaded correctly.');
+        messagesContainer.removeChild(typingIndicator);
+        return;
+    }
+    try {
+        const payload = {
+            model: 'deepseek-ai/DeepSeek-V3-0324',
+            messages: [{ role: 'user', content: `${message}\n\nContext: ${context}` }],
+            stream: false
+        };
+        console.log('Sending payload:', JSON.stringify(payload));
+        const response = await fetch('/.netlify/functions/query-ai', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        if (!response.ok) {
+            let errorData;
+            try {
+                errorData = await response.json();
+            } catch (e) {
+                errorData = { error: `HTTP ${response.status}`, details: await response.text() };
+            }
+            throw new Error(JSON.stringify(errorData, null, 2));
+        }
+        const result = await response.json();
+        const answer = result.choices?.[0]?.message?.content || 'Sorry, I couldn’t find a clear answer.';
+        const botMessage = document.createElement('div');
+        botMessage.className = 'message bot';
+        botMessage.innerHTML = `
+            <div class="avatar"><i data-lucide="bot" class="h-4 w-4"></i></div>
+            <div class="message-content">
+                <p>${answer} (See ${pdfName}, slide ${relevantPage})</p>
+                <div class="meta">
+                    <span>${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                    <div class="actions">
+                        <button onclick="handleReaction('temp', 'like')"><i data-lucide="thumbs-up" class="h-3 w-3"></i></button>
+                        <button onclick="handleReaction('temp', 'dislike')"><i data-lucide="thumbs-down" class="h-3 w-3"></i></button>
+                        <button onclick="regenerateResponse('temp')"><i data-lucide="rotate-ccw" class="h-3 w-3"></i></button>
+                        <button onclick="copyMessage('${answer}')"><i data-lucide="copy" class="h-3 w-3"></i></button>
+                    </div>
+                </div>
+            </div>
+        `;
+        messagesContainer.removeChild(typingIndicator);
+        messagesContainer.appendChild(botMessage);
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        lucide.createIcons();
+    } catch (error) {
+        console.error('Error querying AI:', error);
+        alert(`Error querying AI: ${error.message}. Please try again.`);
+        messagesContainer.removeChild(typingIndicator);
+    }
+}
+       
         function handleKeyPress(event) {
             if (event.key === 'Enter' && !event.shiftKey) {
                 event.preventDefault();

@@ -52,7 +52,7 @@ exports.handler = async function (event) {
             },
             body: JSON.stringify({ model, messages, stream: false })
         });
-        console.log('Hugging Face response status:', response.status);
+        console.log('Hugging Face response status:', response.status, 'statusText:', response.statusText);
         let result;
         try {
             result = await response.json();
@@ -62,8 +62,8 @@ exports.handler = async function (event) {
             throw new Error(`Invalid response from API: ${text}`);
         }
         if (!response.ok) {
-            console.log('Hugging Face error response:', result);
-            throw new Error(result.error || `Hugging Face API returned ${response.status}`);
+            console.log('Hugging Face error response:', JSON.stringify(result, null, 2));
+            throw new Error(JSON.stringify(result.error || { message: `Hugging Face API returned ${response.status}: ${response.statusText}` }));
         }
         console.log('Hugging Face response:', JSON.stringify(result, null, 2));
         return {
