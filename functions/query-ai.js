@@ -22,7 +22,7 @@ exports.handler = async function (event) {
         };
     }
 
-    const { model, messages } = data;
+    const { model, messages, stream, temperature } = data;
     if (!model || !messages) {
         console.log('Missing model or messages:', { model, messages });
         return {
@@ -31,36 +31,40 @@ exports.handler = async function (event) {
         };
     }
 
-    const API_TOKEN = process.env.HF_TOKEN;
-    if (!API_TOKEN) {
-        console.log('HF_TOKEN is not set');
+    const TOGETHER_API_KEY = process.env.TOGETHER_API_KEY;
+    if (!TOGETHER_API_KEY) {
+        console.log('TOGETHER_API_KEY is not set');
         return {
             statusCode: 500,
-            body: JSON.stringify({ error: 'Server configuration error: HF_TOKEN not set' })
+            body: JSON.stringify({ error: 'Server configuration error: TOGETHER_API_KEY not set' })
         };
     }
 
-    const API_URL = 'https://router.huggingface.co/v1/chat/completions';
+    const API_URL = 'https://api.together.xyz/v1/chat/completions';
 
     try {
-        console.log('Calling Hugging Face API with model:', model);
+        console.log('Calling Together AI API with model:', model);
         const response = await fetch(API_URL, {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${API_TOKEN}`,
+                'Authorization': `Bearer ${TOGETHER_API_KEY}`,
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ model, messages, stream: false })
+            body: JSON.stringify({ model, messages, stream: stream || false, temperature: temperature || 0.3 })
         });
-        console.log('Hugging Face response status:', response.status, 'statusText:', response.statusText);
+        console.log('Together AI response status:', response.status, 'statusText:', response.statusText);
 
         if (!response.ok) {
             let errorData;
             try {
                 errorData = await response.json();
-                console.log('Hugging Face error response:', JSON.stringify(errorData, null, 2));
-                if (errorData.error?.code === 'model_not_supported') {
-                    errorData.suggestion = 'The model may not be available for your account. Try a different model like google/gemma-2-2b-it or check your Hugging Face Inference API settings at https://huggingface.co/settings/inference.';
+                console.log('Together AI error response:', JSON.stringify(errorData, null, 2));
+                if (response.status === 429) {
+                    errorData.suggestion = 'Rate limit exceeded (60 RPM). Wait a few seconds or upgrade your plan at https://www.together.ai.';
+                } else if (response.status === 401) {
+                    errorData.suggestion = 'Invalid API key. Verify your TOGETHER_API_KEY in Netlify environment variables or generate a new key at https://www.together.ai.';
+                } else if (errorData.error?.code === 'model_not_supported') {
+                    errorData.suggestion = 'The model is not supported by Together AI. Try a different model like deepseek-ai/DeepSeek-R1 or check available models at https://www.together.ai.';
                 }
             } catch (e) {
                 const text = await response.text();
@@ -71,13 +75,13 @@ exports.handler = async function (event) {
         }
 
         const result = await response.json();
-        console.log('Hugging Face response:', JSON.stringify(result, null, 2));
+        console.log('Together AI response:', JSON.stringify(result, null, 2));
         return {
             statusCode: 200,
             body: JSON.stringify(result)
         };
     } catch (error) {
-        console.error('Hugging Face error:', error.message, error.stack);
+        console.error('Together AI error:', error.message, error.stack);
         return {
             statusCode: 500,
             body: JSON.stringify({ error: 'Failed to query AI', details: error.message })

@@ -757,9 +757,13 @@
             }
             try {
                 const payload = {
-                    model: 'mistralai/Mistral-7B-Instruct-v0.3',
-                    messages: [{ role: 'user', content: `${message}\n\nContext: ${context}` }],
-                    stream: false
+                    model: 'deepseek-ai/DeepSeek-V3',
+                    messages: [
+                        { role: 'system', content: 'You are a helpful assistant providing accurate answers based on the provided context.' },
+                        { role: 'user', content: `${message}\n\nContext: ${context}` }
+                    ],
+                    stream: false,
+                    temperature: 0.3
                 };
                 console.log('Sending payload:', JSON.stringify(payload));
                 const response = await fetch('/.netlify/functions/query-ai', {
@@ -776,7 +780,11 @@
                     }
                     let errorMessage = errorData.error?.message || JSON.stringify(errorData, null, 2);
                     if (errorData.error?.code === 'model_not_supported') {
-                        errorMessage = `The model 'google/gemma-2-2b-it' is not supported by your Hugging Face Inference API configuration. Please check your account settings or try a different model.`;
+                        errorMessage = `The model 'deepseek-ai/DeepSeek-V3' is not supported by Together AI. Please check your API key or try a different model.`;
+                    } else if (response.status === 429) {
+                        errorMessage = `Rate limit exceeded (60 RPM). Please wait or upgrade your Together AI plan at https://www.together.ai.`;
+                    } else if (response.status === 401) {
+                        errorMessage = `Unauthorized: Invalid TOGETHER_API_KEY. Please verify your API key in Netlify environment variables.`;
                     }
                     throw new Error(errorMessage);
                 }
