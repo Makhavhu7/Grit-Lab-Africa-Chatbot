@@ -1,0 +1,960 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grit Lab - Chat with Slides</title>
+    <meta name="description" content="Chat with your study slides using StudyFlow">
+    <meta name="author" content="StudyFlow">
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- PDF.js CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+    <style>
+        :root {
+            --background: 0 0% 90%; /* Light Grey */
+            --foreground: 0 0% 0%; /* Black */
+            --card: 0 0% 90%; /* Light Grey */
+            --card-foreground: 0 0% 0%; /* Black */
+            --primary: 43.3 96% 22.7%; /* DarkGoldenRod */
+            --primary-foreground: 0 0% 100%; /* White */
+            --secondary: 0 0% 90%; /* Light Grey */
+            --secondary-foreground: 0 0% 0%; /* Black */
+            --muted: 0 0% 80%; /* Slightly Darker Light Grey */
+            --muted-foreground: 0 0% 20%; /* Dark Grey */
+            --accent: 43.3 96% 22.7%; /* DarkGoldenRod */
+            --accent-foreground: 0 0% 100%; /* White */
+            --destructive: 0 62.8% 30.6%; /* Keeping original destructive color */
+            --destructive-foreground: 0 0% 100%; /* White */
+            --border: 0 0% 80%; /* Light Grey */
+            --input: 0 0% 80%; /* Light Grey */
+            --ring: 43.3 96% 22.7%; /* DarkGoldenRod */
+            --sidebar-background: 0 0% 20%; /* Dark Grey */
+            --sidebar-foreground: 0 0% 100%; /* White */
+            --sidebar-primary: 43.3 96% 22.7%; /* DarkGoldenRod */
+            --sidebar-primary-foreground: 0 0% 100%; /* White */
+            --sidebar-accent: 0 0% 30%; /* Darker Grey */
+            --sidebar-accent-foreground: 0 0% 100%; /* White */
+            --sidebar-border: 0 0% 30%; /* Darker Grey */
+            --sidebar-ring: 43.3 96% 22.7%; /* DarkGoldenRod */
+            --radius: 0.5rem;
+        }
+
+        body {
+            margin: 0;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            background: linear-gradient(to bottom right, hsl(0 0% 90%), hsl(0 0% 95%), hsl(0 0% 85%)); /* Light Grey gradient */
+            color: hsl(var(--foreground));
+            min-height: 100vh;
+        }
+
+        /* Navigation */
+        nav {
+            background: rgba(0, 0, 0, 0.1); /* Black with transparency */
+            backdrop-filter: blur(8px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 1rem 2rem;
+        }
+        .nav-container {
+            max-width: 1280px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .logo {
+            display: flex;
+            align-items: center;
+            color: hsl(0 0% 100%); /* White */
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+        .logo i {
+            margin-right: 0.5rem;
+        }
+        .nav-buttons button {
+            background: none;
+            border: none;
+            color: hsl(0 0% 100%); /* White */
+            padding: 0.5rem 1rem;
+            margin-left: 1rem;
+            cursor: pointer;
+            border-radius: 0.25rem;
+        }
+        .nav-buttons button:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        .nav-buttons button.active {
+            background: hsl(43.3 96% 22.7%); /* DarkGoldenRod */
+            color: hsl(0 0% 100%); /* White */
+        }
+
+        /* Main Layout */
+        .main-container {
+            display: flex;
+            height: calc(100vh - 4rem);
+        }
+
+        /* Chat Interface */
+        .chat-container {
+            width: 50%;
+            border-right: 1px solid rgba(0, 0, 0, 0.2); /* Black border */
+            display: flex;
+            flex-direction: column;
+        }
+        .chat-header {
+            background: rgba(0, 0, 0, 0.3); /* Black with transparency */
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .chat-header .avatar {
+            width: 2.5rem;
+            height: 2.5rem;
+            background: hsl(43.3 96% 22.7%); /* DarkGoldenRod */
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid rgba(184, 134, 11, 0.3); /* DarkGoldenRod border */
+            position: relative;
+        }
+        .chat-header .avatar .status {
+            width: 0.75rem;
+            height: 0.75rem;
+            background: hsl(120, 100%, 50%); /* Keeping original green status */
+            border-radius: 50%;
+            position: absolute;
+            bottom: -0.2rem;
+            right: -0.2rem;
+            border: 2px solid hsl(0 0% 20%); /* Dark Grey */
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.2); opacity: 0.7; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .chat-header .title {
+            color: hsl(0 0% 100%); /* White */
+            font-size: 1.25rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+        }
+        .chat-header .title i {
+            margin-left: 0.5rem;
+            color: hsl(43.3 96% 22.7%); /* DarkGoldenRod */
+        }
+        .chat-header .subtitle {
+            color: hsl(0 0% 80%); /* Light Grey */
+            font-size: 0.75rem;
+            display: flex;
+            align-items: center;
+        }
+        .chat-header .subtitle i {
+            margin-right: 0.25rem;
+        }
+        .chat-header .badge {
+            background: rgba(184, 134, 11, 0.2); /* DarkGoldenRod with transparency */
+            color: hsl(43.3 96% 22.7%); /* DarkGoldenRod */
+            border: 1px solid rgba(184, 134, 11, 0.3);
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.75rem;
+        }
+        .chat-messages {
+            flex: 1;
+            padding: 1rem;
+            overflow-y: auto;
+        }
+        .message {
+            display: flex;
+            margin-bottom: 1.5rem;
+        }
+        .message.user { justify-content: flex-end; }
+        .message.bot { justify-content: flex-start; }
+        .message-content {
+            max-width: 85%;
+            padding: 1rem;
+            border-radius: 1rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+        .message.user .message-content {
+            background: hsl(43.3 96% 22.7%); /* DarkGoldenRod */
+            color: hsl(0 0% 100%); /* White */
+        }
+        .message.bot .message-content {
+            background: rgba(0, 0, 0, 0.3); /* Black with transparency */
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: hsl(0 0% 90%); /* Light Grey */
+        }
+        .message .avatar {
+            width: 2rem;
+            height: 2rem;
+            border-radius: 50%;
+            margin: 0 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .message.user .avatar {
+            background: hsl(0 0% 80%); /* Light Grey */
+        }
+        .message.bot .avatar {
+            background: hsl(43.3 96% 22.7%); /* DarkGoldenRod */
+        }
+        .message-content p { margin: 0; font-size: 0.875rem; }
+        .message-content .meta {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 0.5rem;
+            font-size: 0.75rem;
+            opacity: 0.6;
+        }
+        .message-content .actions button {
+            background: none;
+            border: none;
+            color: hsl(0 0% 80%); /* Light Grey */
+            cursor: pointer;
+            padding: 0.25rem;
+            margin-left: 0.25rem;
+        }
+        .message-content .actions button:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 0.25rem;
+        }
+        .typing-indicator {
+            display: flex;
+            align-items: center;
+            padding: 1rem;
+            background: rgba(0, 0, 0, 0.3); /* Black with transparency */
+            border-radius: 1rem;
+            max-width: 200px;
+        }
+        .typing-indicator .dot {
+            width: 0.5rem;
+            height: 0.5rem;
+            background: hsl(43.3 96% 22.7%); /* DarkGoldenRod */
+            border-radius: 50%;
+            margin-right: 0.25rem;
+            animation: bounce 1.2s infinite;
+        }
+        .typing-indicator .dot:nth-child(2) { animation-delay: 0.1s; }
+        .typing-indicator .dot:nth-child(3) { animation-delay: 0.2s; }
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-0.5rem); }
+        }
+        .quick-prompts {
+            padding: 0 1rem 0.5rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+        .quick-prompts button {
+            background: none;
+            border: 1px solid hsl(0 0% 80%); /* Light Grey */
+            color: hsl(0 0% 0%); /* Black */
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.75rem;
+            cursor: pointer;
+        }
+        .quick-prompts button:hover {
+            background: hsl(43.3 96% 22.7%); /* DarkGoldenRod */
+            color: hsl(0 0% 100%); /* White */
+        }
+        .chat-input {
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(0, 0, 0, 0.1); /* Black with transparency */
+            padding: 1rem;
+        }
+        .chat-input form {
+            display: flex;
+            align-items: flex-end;
+            gap: 0.75rem;
+        }
+        .chat-input .input-wrapper {
+            flex: 1;
+            background: rgba(0, 0, 0, 0.3); /* Black with transparency */
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 1rem;
+            padding: 0.5rem;
+            display: flex;
+            align-items: center;
+        }
+        .chat-input input {
+            flex: 1;
+            background: none;
+            border: none;
+            color: hsl(0 0% 100%); /* White */
+            font-size: 0.875rem;
+            outline: none;
+        }
+        .chat-input input::placeholder {
+            color: hsl(0 0% 80%); /* Light Grey */
+        }
+        .chat-input .input-actions button {
+            background: none;
+            border: none;
+            color: hsl(0 0% 80%); /* Light Grey */
+            padding: 0.25rem;
+            cursor: pointer;
+        }
+        .chat-input .input-actions button:hover {
+            color: hsl(0 0% 100%); /* White */
+        }
+        .chat-input .send-button {
+            background: hsl(43.3 96% 22.7%); /* DarkGoldenRod */
+            color: hsl(0 0% 100%); /* White */
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.75rem;
+            border: none;
+            cursor: pointer;
+        }
+        .chat-input .send-button:hover {
+            background: hsl(43.3 96% 32.7%); /* Lighter DarkGoldenRod */
+            transform: scale(1.05);
+        }
+        .chat-input .input-info {
+            text-align: center;
+            font-size: 0.75rem;
+            color: hsl(0 0% 80%); /* Light Grey */
+            margin-top: 0.5rem;
+        }
+
+        /* Slides Viewer */
+        .slides-container {
+            width: 50%;
+            display: flex;
+            flex-direction: column;
+            background: hsl(0 0% 95%); /* Light Grey */
+        }
+        .slides-header {
+            background: hsl(0 0% 100%); /* White */
+            border-bottom: 1px solid hsl(0 0% 90%); /* Light Grey */
+            padding: 1rem;
+        }
+        .slides-header .title {
+            color: hsl(0 0% 0%); /* Black */
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+        .slides-header .controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .slides-header .view-toggle button {
+            background: none;
+            border: 1px solid hsl(0 0% 80%); /* Light Grey */
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            cursor: pointer;
+        }
+        .slides-header .view-toggle button.active {
+            background: hsl(43.3 96% 22.7%); /* DarkGoldenRod */
+            color: hsl(0 0% 100%); /* White */
+            border-color: hsl(43.3 96% 22.7%);
+        }
+        .slides-header .search {
+            position: relative;
+            width: 50%;
+        }
+        .slides-header .search i {
+            position: absolute;
+            left: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: hsl(0 0% 80%); /* Light Grey */
+        }
+        .slides-header .search input {
+            width: 100%;
+            padding: 0.5rem 0.5rem 0.5rem 2rem;
+            border: 1px solid hsl(0 0% 80%); /* Light Grey */
+            border-radius: 0.25rem;
+            font-size: 0.875rem;
+        }
+        .slides-header .upload {
+            position: relative;
+            width: 25%;
+        }
+        .slides-header .upload input {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid hsl(0 0% 80%); /* Light Grey */
+            border-radius: 0.25rem;
+            font-size: 0.875rem;
+            color: hsl(0 0% 80%); /* Light Grey */
+        }
+        .slides-header .badge {
+            background: hsl(0 0% 90%); /* Light Grey */
+            color: hsl(0 0% 0%); /* Black */
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.75rem;
+            margin-top: 0.75rem;
+            display: none;
+        }
+        .slides-content {
+            flex: 1;
+            padding: 1rem;
+            overflow-y: auto;
+        }
+        .slides-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+        .slides-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+        .slide-card {
+            background: hsl(0 0% 100%); /* White */
+            border: 1px solid hsl(0 0% 90%); /* Light Grey */
+            border-radius: 0.5rem;
+            overflow: hidden;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .slide-card:hover {
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .slide-card.selected {
+            border: 2px solid hsl(43.3 96% 22.7%); /* DarkGoldenRod */
+            background: hsl(0 0% 95%); /* Light Grey */
+        }
+        .slide-card .thumbnail {
+            aspect-ratio: 3/4;
+            background: hsl(0 0% 95%); /* Light Grey */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .slide-card .thumbnail img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .slide-card .content {
+            padding: 0.75rem;
+        }
+        .slide-card .title {
+            color: hsl(0 0% 0%); /* Black */
+            font-size: 0.875rem;
+            font-weight: 500;
+            margin-bottom: 0.25rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .slide-card .meta {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            color: hsl(0 0% 80%); /* Light Grey */
+        }
+        .slide-card .date {
+            font-size: 0.75rem;
+            color: hsl(0 0% 80%); /* Light Grey */
+        }
+        .slide-card.list {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem;
+        }
+        .slide-card.list .thumbnail {
+            width: 4rem;
+            height: 5rem;
+            flex-shrink: 0;
+        }
+        .slide-card.list .content {
+            flex: 1;
+            padding: 0 0.75rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav>
+        <div class="nav-container">
+            <div class="logo">
+                <i data-lucide="book-open" class="h-8 w-8"></i>
+                Grit Bot
+            </div>
+            <div class="nav-buttons">
+                <button><i data-lucide="trending-up" class="h-5 w-5 mr-2"></i>Overview</button>
+                <button class="active"><i data-lucide="message-square" class="h-5 w-5 mr-2"></i>Chat with Slides</button>
+                <button><i data-lucide="settings" class="h-5 w-5 mr-2"></i>Settings</button>
+                <button><i data-lucide="log-out" class="h-5 w-5 mr-2"></i>Logout</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="main-container">
+        <!-- Chat Interface -->
+        <div class="chat-container">
+            <div class="chat-header">
+                <div class="flex items-center space-x-3">
+                    <div class="avatar">
+                        <i data-lucide="sparkles" class="h-5 w-5"></i>
+                        <div class="status"></div>
+                    </div>
+                    <div>
+                        <h2 class="title">Study Assistant <i data-lucide="zap" class="h-4 w-4"></i></h2>
+                        <p class="subtitle"><i data-lucide="book-open" class="h-3 w-3"></i>Ready to help with your slides</p>
+                    </div>
+                </div>
+                <span class="badge">AI Powered</span>
+            </div>
+            <div class="chat-messages">
+                <div class="message bot">
+                    <div class="avatar"><i data-lucide="bot" class="h-4 w-4"></i></div>
+                    <div class="message-content">
+                        <p>👋 Hello! I'm your AI study assistant. Select a slide and ask me anything!</p>
+                        <div class="meta">
+                            <span>5:30 PM</span>
+                            <div class="actions">
+                                <button onclick="handleReaction('1', 'like')"><i data-lucide="thumbs-up" class="h-3 w-3"></i></button>
+                                <button onclick="handleReaction('1', 'dislike')"><i data-lucide="thumbs-down" class="h-3 w-3"></i></button>
+                                <button onclick="regenerateResponse('1')"><i data-lucide="rotate-ccw" class="h-3 w-3"></i></button>
+                                <button onclick="copyMessage('Hello! I\'m your AI study assistant...')"><i data-lucide="copy" class="h-3 w-3"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="quick-prompts">
+                <button onclick="setInput('Explain this concept simply')">Explain this concept simply</button>
+                <button onclick="setInput('Create practice questions')">Create practice questions</button>
+                <button onclick="setInput('Summarize key points')">Summarize key points</button>
+                <button onclick="setInput('Show me examples')">Show me examples</button>
+            </div>
+            <div class="chat-input">
+                <form onsubmit="handleSendMessage(event)">
+                    <div class="input-wrapper">
+                        <input type="text" id="chatInput" placeholder="Ask me anything about your slides..." onkeypress="handleKeyPress(event)">
+                        <div class="input-actions">
+                            <button type="button"><i data-lucide="paperclip" class="h-4 w-4"></i></button>
+                            <button type="button"><i data-lucide="smile" class="h-4 w-4"></i></button>
+                            <button type="button"><i data-lucide="mic" class="h-4 w-4"></i></button>
+                        </div>
+                    </div>
+                    <button type="submit" class="send-button"><i data-lucide="send" class="h-4 w-4"></i></button>
+                </form>
+                <p class="input-info">Press Enter to send • Shift+Enter for new line • AI can make mistakes</p>
+            </div>
+        </div>
+
+        <!-- Slides Viewer -->
+        <div class="slides-container">
+            <div class="slides-header">
+                <h2 class="title">Knowledge Base</h2>
+                <div class="controls">
+                    <div class="search">
+                        <i data-lucide="search" class="h-4 w-4"></i>
+                        <input type="text" id="slideSearch" placeholder="Search slides..." oninput="searchSlides()">
+                    </div>
+                    <div class="upload">
+                        <input type="file" id="pdfUpload" accept=".pdf" onchange="handlePDFUpload(event)">
+                    </div>
+                    <div class="view-toggle">
+                        <button id="gridView" class="active" onclick="setViewMode('grid')"><i data-lucide="grid" class="h-4 w-4"></i></button>
+                        <button id="listView" onclick="setViewMode('list')"><i data-lucide="list" class="h-4 w-4"></i></button>
+                    </div>
+                </div>
+                <span class="badge" id="selectionBadge">0 slides selected</span>
+            </div>
+            <div class="slides-content">
+                <div id="slidesContainer" class="slides-grid">
+                    <div class="slide-card" data-id="1" onclick="toggleSlideSelection('1')">
+                        <div class="thumbnail">
+                            <img src="https://via.placeholder.com/150" alt="ACSSE_IFM02A2_Tut2.pdf">
+                        </div>
+                        <div class="content">
+                            <h3 class="title">ACSSE_IFM02A2_Tut2.pdf</h3>
+                            <div class="meta">
+                                <span>15 pages</span>
+                                <span>2.3 MB</span>
+                            </div>
+                            <div class="date">2024-06-01</div>
+                        </div>
+                    </div>
+                    <div class="slide-card" data-id="2" onclick="toggleSlideSelection('2')">
+                        <div class="thumbnail">
+                            <img src="https://via.placeholder.com/150" alt="IFM2A_Chapter1.pdf">
+                        </div>
+                        <div class="content">
+                            <h3 class="title">IFM2A_Chapter1.pdf</h3>
+                            <div class="meta">
+                                <span>12 pages</span>
+                                <span>1.8 MB</span>
+                            </div>
+                            <div class="date">2024-06-02</div>
+                        </div>
+                    </div>
+                    <div class="slide-card" data-id="3" onclick="toggleSlideSelection('3')">
+                        <div class="thumbnail">
+                            <img src="https://via.placeholder.com/150" alt="ACSSE_IFM02A2_Chap11.pdf">
+                        </div>
+                        <div class="content">
+                            <h3 class="title">ACSSE_IFM02A2_Chap11.pdf</h3>
+                            <div class="meta">
+                                <span>20 pages</span>
+                                <span>3.1 MB</span>
+                            </div>
+                            <div class="date">2024-06-03</div>
+                        </div>
+                    </div>
+                    <div class="slide-card" data-id="4" onclick="toggleSlideSelection('4')">
+                        <div class="thumbnail">
+                            <img src="https://via.placeholder.com/150" alt="Cheat_Sheet.pdf">
+                        </div>
+                        <div class="content">
+                            <h3 class="title">Cheat_Sheet.pdf</h3>
+                            <div class="meta">
+                                <span>8 pages</span>
+                                <span>0.9 MB</span>
+                            </div>
+                            <div class="date">2024-06-04</div>
+                        </div>
+                    </div>
+                    <div class="slide-card" data-id="5" onclick="toggleSlideSelection('5')">
+                        <div class="thumbnail">
+                            <img src="https://via.placeholder.com/150" alt="ACSSE_IFM02A2_Chap5.pdf">
+                        </div>
+                        <div class="content">
+                            <h3 class="title">ACSSE_IFM02A2_Chap5.pdf</h3>
+                            <div class="meta">
+                                <span>18 pages</span>
+                                <span>2.7 MB</span>
+                            </div>
+                            <div class="date">2024-06-05</div>
+                        </div>
+                    </div>
+                    <div class="slide-card" data-id="6" onclick="toggleSlideSelection('6')">
+                        <div class="thumbnail">
+                            <img src="https://via.placeholder.com/150" alt="ACSSE_IFM02A2_Chap10.pdf">
+                        </div>
+                        <div class="content">
+                            <h3 class="title">ACSSE_IFM02A2_Chap10.pdf</h3>
+                            <div class="meta">
+                                <span>16 pages</span>
+                                <span>2.1 MB</span>
+                            </div>
+                            <div class="date">2024-06-06</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Lucide Icons
+        lucide.createIcons();
+
+        // PDF Handling
+        const pdfFiles = [
+            { id: '1', name: 'ACSSE_IFM02A2_Tut2.pdf', path: '/pdfs/ACSSE_IFM02A2_Tut2.pdf', pages: 15, size: '2.3 MB', date: '2024-06-01' },
+            { id: '2', name: 'IFM2A_Chapter1.pdf', path: '/pdfs/IFM2A_Chapter1.pdf', pages: 12, size: '1.8 MB', date: '2024-06-02' },
+            { id: '3', name: 'ACSSE_IFM02A2_Chap11.pdf', path: '/pdfs/ACSSE_IFM02A2_Chap11.pdf', pages: 20, size: '3.1 MB', date: '2024-06-03' },
+            { id: '4', name: 'Cheat_Sheet.pdf', path: '/pdfs/Cheat_Sheet.pdf', pages: 8, size: '0.9 MB', date: '2024-06-04' },
+            { id: '5', name: 'ACSSE_IFM02A2_Chap5.pdf', path: '/pdfs/ACSSE_IFM02A2_Chap5.pdf', pages: 18, size: '2.7 MB', date: '2024-06-05' },
+            { id: '6', name: 'ACSSE_IFM02A2_Chap10.pdf', path: '/pdfs/ACSSE_IFM02A2_Chap10.pdf', pages: 16, size: '2.1 MB', date: '2024-06-06' }
+        ];
+        let pdfContent = {}; // Store text per PDF { id: [{ page, text }] }
+        let selectedSlides = [];
+
+        async function loadPDFs() {
+            for (const pdf of pdfFiles) {
+                try {
+                    const response = await fetch(pdf.path);
+                    if (!response.ok) throw new Error(`Failed to fetch ${pdf.name}`);
+                    const arrayBuffer = await response.arrayBuffer();
+                    const typedArray = new Uint8Array(arrayBuffer);
+                    const pdfDoc = await pdfjsLib.getDocument(typedArray).promise;
+                    pdfContent[pdf.id] = [];
+
+                    for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++) {
+                        const page = await pdfDoc.getPage(pageNum);
+                        const textContent = await page.getTextContent();
+                        const text = textContent.items.map(item => item.str).join(' ');
+                        pdfContent[pdf.id].push({ page: pageNum, text });
+                    }
+                } catch (error) {
+                    console.error(`Error loading ${pdf.name}:`, error);
+                }
+            }
+            console.log('All PDFs processed');
+        }
+
+        async function handlePDFUpload(event) {
+            const file = event.target.files[0];
+            if (!file || !file.type.includes('pdf')) {
+                alert('Please upload a valid PDF file.');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = async function () {
+                const typedArray = new Uint8Array(reader.result);
+                const pdfDoc = await pdfjsLib.getDocument(typedArray).promise;
+                const pdfId = `pdf-${Date.now()}`;
+                const pdfMetadata = {
+                    id: pdfId,
+                    name: file.name,
+                    path: URL.createObjectURL(file),
+                    pages: pdfDoc.numPages,
+                    size: (file.size / 1024 / 1024).toFixed(1) + ' MB',
+                    date: new Date().toISOString().split('T')[0]
+                };
+                pdfFiles.push(pdfMetadata);
+                pdfContent[pdfId] = [];
+
+                for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++) {
+                    const page = await pdfDoc.getPage(pageNum);
+                    const textContent = await page.getTextContent();
+                    const text = textContent.items.map(item => item.str).join(' ');
+                    pdfContent[pdfId].push({ page: pageNum, text });
+                }
+
+                updateSlidesViewer();
+                alert('PDF uploaded successfully!');
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function updateSlidesViewer() {
+            const container = document.getElementById('slidesContainer');
+            container.innerHTML = '';
+            pdfFiles.forEach(pdf => {
+                const slideCard = document.createElement('div');
+                slideCard.className = `slide-card ${selectedSlides.includes(pdf.id) ? 'selected' : ''}`;
+                slideCard.dataset.id = pdf.id;
+                slideCard.onclick = () => toggleSlideSelection(pdf.id);
+                slideCard.innerHTML = `
+                    <div class="thumbnail">
+                        <img src="https://via.placeholder.com/150" alt="${pdf.name}">
+                    </div>
+                    <div class="content">
+                        <h3 class="title">${pdf.name}</h3>
+                        <div class="meta">
+                            <span>${pdf.pages} pages</span>
+                            <span>${pdf.size}</span>
+                        </div>
+                        <div class="date">${pdf.date}</div>
+                    </div>
+                `;
+                container.appendChild(slideCard);
+            });
+            lucide.createIcons();
+        }
+
+        // Chat Interface Functions
+        async function handleSendMessage(event) {
+            event.preventDefault();
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+            if (!message) return;
+
+            const messagesContainer = document.querySelector('.chat-messages');
+            const userMessage = document.createElement('div');
+            userMessage.className = 'message user';
+            userMessage.innerHTML = `
+                <div class="message-content">
+                    <p>${message}</p>
+                    <div class="meta">
+                        <span>${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                        <div class="actions">
+                            <button onclick="copyMessage('${message}')"><i data-lucide="copy" class="h-3 w-3"></i></button>
+                        </div>
+                    </div>
+                </div>
+                <div class="avatar"><i data-lucide="user" class="h-4 w-4"></i></div>
+            `;
+            messagesContainer.appendChild(userMessage);
+            input.value = '';
+
+            // Show typing indicator
+            const typingIndicator = document.createElement('div');
+            typingIndicator.className = 'message bot typing-indicator';
+            typingIndicator.innerHTML = `
+                <div class="avatar"><i data-lucide="bot" class="h-4 w-4"></i></div>
+                <div class="flex space-x-1">
+                    <div class="dot"></div>
+                    <div class="dot"></div>
+                    <div class="dot"></div>
+                </div>
+            `;
+            messagesContainer.appendChild(typingIndicator);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+            // Select context from selected slide or all PDFs
+            let context = '';
+            let relevantPage = 1;
+            let pdfName = '';
+            if (selectedSlides.length > 0) {
+                const selectedId = selectedSlides[0]; // Use first selected slide
+                const selectedPdf = pdfContent[selectedId];
+                if (selectedPdf) {
+                    for (const page of selectedPdf) {
+                        if (page.text.toLowerCase().includes(message.toLowerCase())) {
+                            context = page.text.substring(0, 1000); // Limit to 1000 chars
+                            relevantPage = page.page;
+                            pdfName = pdfFiles.find(pdf => pdf.id === selectedId).name;
+                            break;
+                        }
+                    }
+                    if (!context) {
+                        context = selectedPdf[0].text.substring(0, 1000); // Fallback to first page
+                        pdfName = pdfFiles.find(pdf => pdf.id === selectedId).name;
+                    }
+                }
+            } else {
+                // Search all PDFs
+                for (const pdfId of Object.keys(pdfContent)) {
+                    for (const page of pdfContent[pdfId]) {
+                        if (page.text.toLowerCase().includes(message.toLowerCase())) {
+                            context = page.text.substring(0, 1000);
+                            relevantPage = page.page;
+                            pdfName = pdfFiles.find(pdf => pdf.id === pdfId).name;
+                            break;
+                        }
+                    }
+                    if (context) break;
+                }
+                if (!context) {
+                    const firstPdfId = Object.keys(pdfContent)[0];
+                    context = pdfContent[firstPdfId][0].text.substring(0, 1000);
+                    pdfName = pdfFiles.find(pdf => pdf.id === firstPdfId).name;
+                }
+            }
+
+            // Query Hugging Face API via Netlify Function
+            try {
+                const response = await fetch('/.netlify/functions/query-ai', {
+                    method: 'POST',
+                    body: JSON.stringify({ question: message, context })
+                });
+                const result = await response.json();
+                const answer = result.answer || 'Sorry, I couldn’t find a clear answer.';
+                const botMessage = document.createElement('div');
+                botMessage.className = 'message bot';
+                botMessage.innerHTML = `
+                    <div class="avatar"><i data-lucide="bot" class="h-4 w-4"></i></div>
+                    <div class="message-content">
+                        <p>${answer} (See ${pdfName}, slide ${relevantPage})</p>
+                        <div class="meta">
+                            <span>${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                            <div class="actions">
+                                <button onclick="handleReaction('temp', 'like')"><i data-lucide="thumbs-up" class="h-3 w-3"></i></button>
+                                <button onclick="handleReaction('temp', 'dislike')"><i data-lucide="thumbs-down" class="h-3 w-3"></i></button>
+                                <button onclick="regenerateResponse('temp')"><i data-lucide="rotate-ccw" class="h-3 w-3"></i></button>
+                                <button onclick="copyMessage('${answer}')"><i data-lucide="copy" class="h-3 w-3"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                messagesContainer.removeChild(typingIndicator);
+                messagesContainer.appendChild(botMessage);
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                lucide.createIcons();
+            } catch (error) {
+                alert('Error querying AI. Please try again.');
+                messagesContainer.removeChild(typingIndicator);
+            }
+        }
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                handleSendMessage(event);
+            }
+        }
+
+        function setInput(text) {
+            document.getElementById('chatInput').value = text;
+        }
+
+        function copyMessage(content) {
+            navigator.clipboard.writeText(content);
+            alert('Message copied to clipboard!');
+        }
+
+        function handleReaction(id, reaction) {
+            const button = event.target.closest('button');
+            if (reaction === 'like') {
+                button.style.color = button.style.color === 'rgb(74, 222, 128)' ? '' : '#4ade80';
+            } else {
+                button.style.color = button.style.color === 'rgb(248, 113, 113)' ? '' : '#f87171';
+            }
+            alert(reaction === 'like' ? 'Thanks for the feedback!' : 'Feedback received');
+        }
+
+        function regenerateResponse(id) {
+            alert('Regenerating response...');
+        }
+
+        // Slides Viewer Functions
+        let viewMode = 'grid';
+
+        function setViewMode(mode) {
+            viewMode = mode;
+            const gridButton = document.getElementById('gridView');
+            const listButton = document.getElementById('listView');
+            const container = document.getElementById('slidesContainer');
+            if (mode === 'grid') {
+                gridButton.classList.add('active');
+                listButton.classList.remove('active');
+                container.className = 'slides-grid';
+                document.querySelectorAll('.slide-card').forEach(card => {
+                    card.classList.remove('list');
+                });
+            } else {
+                listButton.classList.add('active');
+                gridButton.classList.remove('active');
+                container.className = 'slides-list';
+                document.querySelectorAll('.slide-card').forEach(card => {
+                    card.classList.add('list');
+                });
+            }
+        }
+
+        function searchSlides() {
+            const searchTerm = document.getElementById('slideSearch').value.toLowerCase();
+            document.querySelectorAll('.slide-card').forEach(card => {
+                const title = card.querySelector('.title').textContent.toLowerCase();
+                card.style.display = title.includes(searchTerm) ? '' : 'none';
+            });
+        }
+
+        function toggleSlideSelection(id) {
+            const card = document.querySelector(`.slide-card[data-id="${id}"]`);
+            if (selectedSlides.includes(id)) {
+                selectedSlides = selectedSlides.filter(slideId => slideId !== id);
+                card.classList.remove('selected');
+            } else {
+                selectedSlides = [id]; // Single selection for simplicity
+                document.querySelectorAll('.slide-card').forEach(c => c.classList.remove('selected'));
+                card.classList.add('selected');
+            }
+            const badge = document.getElementById('selectionBadge');
+            badge.textContent = `${selectedSlides.length} slide${selectedSlides.length !== 1 ? 's' : ''} selected`;
+            badge.style.display = selectedSlides.length > 0 ? 'inline-block' : 'none';
+        }
+
+        // Load PDFs on page load
+        window.onload = function () {
+            loadPDFs();
+        };
+    </script>
+</body>
+</html>
