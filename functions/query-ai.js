@@ -1,7 +1,7 @@
 const fetch = require('node-fetch');
 
 exports.handler = async function (event) {
-    console.log('Received event:', JSON.stringify(event, null, 2)); // Detailed debug
+    console.log('Received event:', JSON.stringify(event, null, 2));
     if (!event.body) {
         console.log('No body received');
         return {
@@ -13,7 +13,7 @@ exports.handler = async function (event) {
     let data;
     try {
         data = JSON.parse(event.body);
-        console.log('Parsed body:', JSON.stringify(data, null, 2)); // Detailed debug
+        console.log('Parsed body:', JSON.stringify(data, null, 2));
     } catch (error) {
         console.log('JSON parse error:', error.message);
         return {
@@ -22,12 +22,12 @@ exports.handler = async function (event) {
         };
     }
 
-    const { question, context } = data;
-    if (!question || !context) {
-        console.log('Missing question or context:', { question, context });
+    const { model, messages } = data;
+    if (!model || !messages) {
+        console.log('Missing model or messages:', { model, messages });
         return {
             statusCode: 400,
-            body: JSON.stringify({ error: 'Missing question or context in request body' })
+            body: JSON.stringify({ error: 'Missing model or messages in request body' })
         };
     }
 
@@ -40,20 +40,27 @@ exports.handler = async function (event) {
         };
     }
 
-    const API_URL = 'https://api-inference.huggingface.co/models/distilbert-base-cased-distilled-squad';
+    const API_URL = 'https://router.huggingface.co/v1/chat/completions';
 
     try {
-        console.log('Calling Hugging Face API with question:', question);
+        console.log('Calling Hugging Face API with model:', model);
         const response = await fetch(API_URL, {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${API_TOKEN}`,
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ question, context })
+            body: JSON.stringify({ model, messages, stream: false })
         });
         console.log('Hugging Face response status:', response.status);
-        const result = await response.json();
+        let result;
+        try {
+            result = await response.json();
+        } catch (e) {
+            const text = await response.text();
+            console.log('Non-JSON response:', text);
+            throw new Error(`Invalid response from API: ${text}`);
+        }
         if (!response.ok) {
             console.log('Hugging Face error response:', result);
             throw new Error(result.error || `Hugging Face API returned ${response.status}`);

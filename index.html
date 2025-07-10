@@ -7,16 +7,13 @@
     <meta name="description" content="Chat with your study slides using StudyFlow">
     <meta name="author" content="StudyFlow">
     <!-- Lucide Icons CDN -->
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lucide@0.441.0/dist/umd/lucide.min.js"></script>
     <!-- PDF.js CDN -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
-    
-
-<script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>
         // Set PDF.js worker source
-        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
     </script>
-
     <style>
         :root {
             --background: 0 0% 90%; /* Light Grey */
@@ -46,18 +43,15 @@
             --sidebar-ring: 43.3 96% 22.7%; /* DarkGoldenRod */
             --radius: 0.5rem;
         }
-
         body {
             margin: 0;
             font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-            background: linear-gradient(to bottom right, hsl(0 0% 90%), hsl(0 0% 95%), hsl(0 0% 85%)); /* Light Grey gradient */
+            background: linear-gradient(to bottom right, hsl(0 0% 90%), hsl(0 0% 95%), hsl(0 0% 85%));
             color: hsl(var(--foreground));
             min-height: 100vh;
         }
-
-        /* Navigation */
         nav {
-            background: rgba(0, 0, 0, 0.1); /* Black with transparency */
+            background: rgba(0, 0, 0, 0.1);
             backdrop-filter: blur(8px);
             border-bottom: 1px solid rgba(255, 255, 255, 0.2);
             padding: 1rem 2rem;
@@ -72,7 +66,7 @@
         .logo {
             display: flex;
             align-items: center;
-            color: hsl(0 0% 100%); /* White */
+            color: hsl(0 0% 100%);
             font-size: 1.5rem;
             font-weight: bold;
         }
@@ -82,7 +76,7 @@
         .nav-buttons button {
             background: none;
             border: none;
-            color: hsl(0 0% 100%); /* White */
+            color: hsl(0 0% 100%);
             padding: 0.5rem 1rem;
             margin-left: 1rem;
             cursor: pointer;
@@ -92,25 +86,21 @@
             background: rgba(255, 255, 255, 0.1);
         }
         .nav-buttons button.active {
-            background: hsl(43.3 96% 22.7%); /* DarkGoldenRod */
-            color: hsl(0 0% 100%); /* White */
+            background: hsl(43.3 96% 22.7%);
+            color: hsl(0 0% 100%);
         }
-
-        /* Main Layout */
         .main-container {
             display: flex;
             height: calc(100vh - 4rem);
         }
-
-        /* Chat Interface */
         .chat-container {
             width: 50%;
-            border-right: 1px solid rgba(0, 0, 0, 0.2); /* Black border */
+            border-right: 1px solid rgba(0, 0, 0, 0.2);
             display: flex;
             flex-direction: column;
         }
         .chat-header {
-            background: rgba(0, 0, 0, 0.3); /* Black with transparency */
+            background: rgba(0, 0, 0, 0.3);
             border-bottom: 1px solid rgba(255, 255, 255, 0.2);
             padding: 1rem;
             display: flex;
@@ -120,23 +110,23 @@
         .chat-header .avatar {
             width: 2.5rem;
             height: 2.5rem;
-            background: hsl(43.3 96% 22.7%); /* DarkGoldenRod */
+            background: hsl(43.3 96% 22.7%);
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            border: 2px solid rgba(184, 134, 11, 0.3); /* DarkGoldenRod border */
+            border: 2px solid rgba(184, 134, 11, 0.3);
             position: relative;
         }
         .chat-header .avatar .status {
             width: 0.75rem;
             height: 0.75rem;
-            background: hsl(120, 100%, 50%); /* Keeping original green status */
+            background: hsl(120, 100%, 50%);
             border-radius: 50%;
             position: absolute;
             bottom: -0.2rem;
             right: -0.2rem;
-            border: 2px solid hsl(0 0% 20%); /* Dark Grey */
+            border: 2px solid hsl(0 0% 20%);
             animation: pulse 2s infinite;
         }
         @keyframes pulse {
@@ -145,7 +135,7 @@
             100% { transform: scale(1); opacity: 1; }
         }
         .chat-header .title {
-            color: hsl(0 0% 100%); /* White */
+            color: hsl(0 0% 100%);
             font-size: 1.25rem;
             font-weight: 600;
             display: flex;
@@ -153,10 +143,10 @@
         }
         .chat-header .title i {
             margin-left: 0.5rem;
-            color: hsl(43.3 96% 22.7%); /* DarkGoldenRod */
+            color: hsl(43.3 96% 22.7%);
         }
         .chat-header .subtitle {
-            color: hsl(0 0% 80%); /* Light Grey */
+            color: hsl(0 0% 80%);
             font-size: 0.75rem;
             display: flex;
             align-items: center;
@@ -165,8 +155,8 @@
             margin-right: 0.25rem;
         }
         .chat-header .badge {
-            background: rgba(184, 134, 11, 0.2); /* DarkGoldenRod with transparency */
-            color: hsl(43.3 96% 22.7%); /* DarkGoldenRod */
+            background: rgba(184, 134, 11, 0.2);
+            color: hsl(43.3 96% 22.7%);
             border: 1px solid rgba(184, 134, 11, 0.3);
             padding: 0.25rem 0.5rem;
             border-radius: 0.25rem;
@@ -190,13 +180,13 @@
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
         }
         .message.user .message-content {
-            background: hsl(43.3 96% 22.7%); /* DarkGoldenRod */
-            color: hsl(0 0% 100%); /* White */
+            background: hsl(43.3 96% 22.7%);
+            color: hsl(0 0% 100%);
         }
         .message.bot .message-content {
-            background: rgba(0, 0, 0, 0.3); /* Black with transparency */
+            background: rgba(0, 0, 0, 0.3);
             border: 1px solid rgba(255, 255, 255, 0.2);
-            color: hsl(0 0% 90%); /* Light Grey */
+            color: hsl(0 0% 90%);
         }
         .message .avatar {
             width: 2rem;
@@ -208,10 +198,10 @@
             justify-content: center;
         }
         .message.user .avatar {
-            background: hsl(0 0% 80%); /* Light Grey */
+            background: hsl(0 0% 80%);
         }
         .message.bot .avatar {
-            background: hsl(43.3 96% 22.7%); /* DarkGoldenRod */
+            background: hsl(43.3 96% 22.7%);
         }
         .message-content p { margin: 0; font-size: 0.875rem; }
         .message-content .meta {
@@ -224,7 +214,7 @@
         .message-content .actions button {
             background: none;
             border: none;
-            color: hsl(0 0% 80%); /* Light Grey */
+            color: hsl(0 0% 80%);
             cursor: pointer;
             padding: 0.25rem;
             margin-left: 0.25rem;
@@ -237,14 +227,14 @@
             display: flex;
             align-items: center;
             padding: 1rem;
-            background: rgba(0, 0, 0, 0.3); /* Black with transparency */
+            background: rgba(0, 0, 0, 0.3);
             border-radius: 1rem;
             max-width: 200px;
         }
         .typing-indicator .dot {
             width: 0.5rem;
             height: 0.5rem;
-            background: hsl(43.3 96% 22.7%); /* DarkGoldenRod */
+            background: hsl(43.3 96% 22.7%);
             border-radius: 50%;
             margin-right: 0.25rem;
             animation: bounce 1.2s infinite;
@@ -263,20 +253,20 @@
         }
         .quick-prompts button {
             background: none;
-            border: 1px solid hsl(0 0% 80%); /* Light Grey */
-            color: hsl(0 0% 0%); /* Black */
+            border: 1px solid hsl(0 0% 80%);
+            color: hsl(0 0% 0%);
             padding: 0.25rem 0.5rem;
             border-radius: 0.25rem;
             font-size: 0.75rem;
             cursor: pointer;
         }
         .quick-prompts button:hover {
-            background: hsl(43.3 96% 22.7%); /* DarkGoldenRod */
-            color: hsl(0 0% 100%); /* White */
+            background: hsl(43.3 96% 22.7%);
+            color: hsl(0 0% 100%);
         }
         .chat-input {
             border-top: 1px solid rgba(255, 255, 255, 0.2);
-            background: rgba(0, 0, 0, 0.1); /* Black with transparency */
+            background: rgba(0, 0, 0, 0.1);
             padding: 1rem;
         }
         .chat-input form {
@@ -286,7 +276,7 @@
         }
         .chat-input .input-wrapper {
             flex: 1;
-            background: rgba(0, 0, 0, 0.3); /* Black with transparency */
+            background: rgba(0, 0, 0, 0.3);
             border: 1px solid rgba(255, 255, 255, 0.2);
             border-radius: 1rem;
             padding: 0.5rem;
@@ -297,56 +287,54 @@
             flex: 1;
             background: none;
             border: none;
-            color: hsl(0 0% 100%); /* White */
+            color: hsl(0 0% 100%);
             font-size: 0.875rem;
             outline: none;
         }
         .chat-input input::placeholder {
-            color: hsl(0 0% 80%); /* Light Grey */
+            color: hsl(0 0% 80%);
         }
         .chat-input .input-actions button {
             background: none;
             border: none;
-            color: hsl(0 0% 80%); /* Light Grey */
+            color: hsl(0 0% 80%);
             padding: 0.25rem;
             cursor: pointer;
         }
         .chat-input .input-actions button:hover {
-            color: hsl(0 0% 100%); /* White */
+            color: hsl(0 0% 100%);
         }
         .chat-input .send-button {
-            background: hsl(43.3 96% 22.7%); /* DarkGoldenRod */
-            color: hsl(0 0% 100%); /* White */
+            background: hsl(43.3 96% 22.7%);
+            color: hsl(0 0% 100%);
             padding: 0.75rem 1.5rem;
             border-radius: 0.75rem;
             border: none;
             cursor: pointer;
         }
         .chat-input .send-button:hover {
-            background: hsl(43.3 96% 32.7%); /* Lighter DarkGoldenRod */
+            background: hsl(43.3 96% 32.7%);
             transform: scale(1.05);
         }
         .chat-input .input-info {
             text-align: center;
             font-size: 0.75rem;
-            color: hsl(0 0% 80%); /* Light Grey */
+            color: hsl(0 0% 80%);
             margin-top: 0.5rem;
         }
-
-        /* Slides Viewer */
         .slides-container {
             width: 50%;
             display: flex;
             flex-direction: column;
-            background: hsl(0 0% 95%); /* Light Grey */
+            background: hsl(0 0% 95%);
         }
         .slides-header {
-            background: hsl(0 0% 100%); /* White */
-            border-bottom: 1px solid hsl(0 0% 90%); /* Light Grey */
+            background: hsl(0 0% 100%);
+            border-bottom: 1px solid hsl(0 0% 90%);
             padding: 1rem;
         }
         .slides-header .title {
-            color: hsl(0 0% 0%); /* Black */
+            color: hsl(0 0% 0%);
             font-size: 1.25rem;
             font-weight: 600;
             margin-bottom: 1rem;
@@ -358,14 +346,14 @@
         }
         .slides-header .view-toggle button {
             background: none;
-            border: 1px solid hsl(0 0% 80%); /* Light Grey */
+            border: 1px solid hsl(0 0% 80%);
             padding: 0.25rem 0.5rem;
             border-radius: 0.25rem;
             cursor: pointer;
         }
         .slides-header .view-toggle button.active {
-            background: hsl(43.3 96% 22.7%); /* DarkGoldenRod */
-            color: hsl(0 0% 100%); /* White */
+            background: hsl(43.3 96% 22.7%);
+            color: hsl(0 0% 100%);
             border-color: hsl(43.3 96% 22.7%);
         }
         .slides-header .search {
@@ -377,30 +365,18 @@
             left: 0.75rem;
             top: 50%;
             transform: translateY(-50%);
-            color: hsl(0 0% 80%); /* Light Grey */
+            color: hsl(0 0% 80%);
         }
         .slides-header .search input {
             width: 100%;
             padding: 0.5rem 0.5rem 0.5rem 2rem;
-            border: 1px solid hsl(0 0% 80%); /* Light Grey */
+            border: 1px solid hsl(0 0% 80%);
             border-radius: 0.25rem;
             font-size: 0.875rem;
-        }
-        .slides-header .upload {
-            position: relative;
-            width: 25%;
-        }
-        .slides-header .upload input {
-            width: 100%;
-            padding: 0.5rem;
-            border: 1px solid hsl(0 0% 80%); /* Light Grey */
-            border-radius: 0.25rem;
-            font-size: 0.875rem;
-            color: hsl(0 0% 80%); /* Light Grey */
         }
         .slides-header .badge {
-            background: hsl(0 0% 90%); /* Light Grey */
-            color: hsl(0 0% 0%); /* Black */
+            background: hsl(0 0% 90%);
+            color: hsl(0 0% 0%);
             padding: 0.25rem 0.5rem;
             border-radius: 0.25rem;
             font-size: 0.75rem;
@@ -423,8 +399,8 @@
             gap: 0.75rem;
         }
         .slide-card {
-            background: hsl(0 0% 100%); /* White */
-            border: 1px solid hsl(0 0% 90%); /* Light Grey */
+            background: hsl(0 0% 100%);
+            border: 1px solid hsl(0 0% 90%);
             border-radius: 0.5rem;
             overflow: hidden;
             cursor: pointer;
@@ -434,12 +410,12 @@
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
         .slide-card.selected {
-            border: 2px solid hsl(43.3 96% 22.7%); /* DarkGoldenRod */
-            background: hsl(0 0% 95%); /* Light Grey */
+            border: 2px solid hsl(43.3 96% 22.7%);
+            background: hsl(0 0% 95%);
         }
         .slide-card .thumbnail {
             aspect-ratio: 3/4;
-            background: hsl(0 0% 95%); /* Light Grey */
+            background: hsl(0 0% 95%);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -453,7 +429,7 @@
             padding: 0.75rem;
         }
         .slide-card .title {
-            color: hsl(0 0% 0%); /* Black */
+            color: hsl(0 0% 0%);
             font-size: 0.875rem;
             font-weight: 500;
             margin-bottom: 0.25rem;
@@ -465,11 +441,11 @@
             display: flex;
             justify-content: space-between;
             font-size: 0.75rem;
-            color: hsl(0 0% 80%); /* Light Grey */
+            color: hsl(0 0% 80%);
         }
         .slide-card .date {
             font-size: 0.75rem;
-            color: hsl(0 0% 80%); /* Light Grey */
+            color: hsl(0 0% 80%);
         }
         .slide-card.list {
             display: flex;
@@ -488,7 +464,6 @@
     </style>
 </head>
 <body>
-    <!-- Navigation -->
     <nav>
         <div class="nav-container">
             <div class="logo">
@@ -503,10 +478,7 @@
             </div>
         </div>
     </nav>
-
-    <!-- Main Content -->
     <div class="main-container">
-        <!-- Chat Interface -->
         <div class="chat-container">
             <div class="chat-header">
                 <div class="flex items-center space-x-3">
@@ -559,25 +531,21 @@
                 <p class="input-info">Press Enter to send • Shift+Enter for new line • AI can make mistakes</p>
             </div>
         </div>
-
-        <!-- Slides Viewer -->
         <div class="slides-container">
-  
-<div class="slides-header">
-    <h2 class="title">Knowledge Base</h2>
-    <div class="controls">
-        <div class="search">
-            <i data-lucide="search" class="h-4 w-4"></i>
-            <input type="text" id="slideSearch" placeholder="Search slides..." oninput="searchSlides()">
-        </div>
-        <div class="view-toggle">
-            <button id="gridView" class="active" onclick="setViewMode('grid')"><i data-lucide="grid" class="h-4 w-4"></i></button>
-            <button id="listView" onclick="setViewMode('list')"><i data-lucide="list" class="h-4 w-4"></i></button>
-        </div>
-    </div>
-    <span class="badge" id="selectionBadge">0 slides selected</span>
-</div>
-
+            <div class="slides-header">
+                <h2 class="title">Knowledge Base</h2>
+                <div class="controls">
+                    <div class="search">
+                        <i data-lucide="search" class="h-4 w-4"></i>
+                        <input type="text" id="slideSearch" placeholder="Search slides..." oninput="searchSlides()">
+                    </div>
+                    <div class="view-toggle">
+                        <button id="gridView" class="active" onclick="setViewMode('grid')"><i data-lucide="grid" class="h-4 w-4"></i></button>
+                        <button id="listView" onclick="setViewMode('list')"><i data-lucide="list" class="h-4 w-4"></i></button>
+                    </div>
+                </div>
+                <span class="badge" id="selectionBadge">0 slides selected</span>
+            </div>
             <div class="slides-content">
                 <div id="slidesContainer" class="slides-grid">
                     <div class="slide-card" data-id="1" onclick="toggleSlideSelection('1')">
@@ -587,8 +555,8 @@
                         <div class="content">
                             <h3 class="title">ACSSE_IFM02A2_Tut2.pdf</h3>
                             <div class="meta">
-                                <span>15 pages</span>
-                                <span>2.3 MB</span>
+                                <span>5 pages</span>
+                                <span>Unknown</span>
                             </div>
                             <div class="date">2024-06-01</div>
                         </div>
@@ -600,8 +568,8 @@
                         <div class="content">
                             <h3 class="title">IFM2A_Chapter1.pdf</h3>
                             <div class="meta">
-                                <span>12 pages</span>
-                                <span>1.8 MB</span>
+                                <span>7 pages</span>
+                                <span>Unknown</span>
                             </div>
                             <div class="date">2024-06-02</div>
                         </div>
@@ -613,8 +581,8 @@
                         <div class="content">
                             <h3 class="title">ACSSE_IFM02A2_Chap11.pdf</h3>
                             <div class="meta">
-                                <span>20 pages</span>
-                                <span>3.1 MB</span>
+                                <span>7 pages</span>
+                                <span>Unknown</span>
                             </div>
                             <div class="date">2024-06-03</div>
                         </div>
@@ -623,304 +591,286 @@
             </div>
         </div>
     </div>
-
-    
-<script>
-    // Initialize Lucide Icons
-    lucide.createIcons();
-
-    // PDF Handling
-const pdfFiles = [
-    { id: '1', name: 'ACSSE_IFM02A2_Tut2.pdf', path: 'pdfs/Equations and Inequalities.pdf', pages: 5, size: 'Unknown', date: '2024-06-01' },
-    { id: '2', name: 'IFM2A_Chapter1.pdf', path: 'pdfs/Mechanical Energy.pdf', pages: 7, size: 'Unknown', date: '2024-06-02' },
-    { id: '3', name: 'ACSSE_IFM02A2_Chap11.pdf', path: 'pdfs/tRIGONOMETRY.pdf', pages: 7, size: 'Unknown', date: '2024-06-03' }
-];
-
-    let pdfContent = {};
-    let selectedSlides = [];
-
-    async function loadPDFs() {
-        let loadErrors = [];
-        for (const pdf of pdfFiles) {
-            try {
-                console.log(`Fetching PDF: ${pdf.path}`);
-                const response = await fetch(pdf.path);
-                if (!response.ok) throw new Error(`Failed to fetch ${pdf.name}: ${response.statusText}`);
-                const arrayBuffer = await response.arrayBuffer();
-                const typedArray = new Uint8Array(arrayBuffer);
-                const pdfDoc = await pdfjsLib.getDocument(typedArray).promise;
-                pdfContent[pdf.id] = [];
-                pdf.pages = pdfDoc.numPages;
-
-                for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++) {
-                    const page = await pdfDoc.getPage(pageNum);
-                    const textContent = await page.getTextContent();
-                    const text = textContent.items.map(item => item.str).join(' ');
-                    pdfContent[pdf.id].push({ page: pageNum, text });
+    <script>
+        lucide.createIcons();
+        const pdfFiles = [
+            { id: '1', name: 'ACSSE_IFM02A2_Tut2.pdf', path: 'pdfs/Equations and Inequalities.pdf', pages: 5, size: 'Unknown', date: '2024-06-01' },
+            { id: '2', name: 'IFM2A_Chapter1.pdf', path: 'pdfs/Mechanical Energy.pdf', pages: 7, size: 'Unknown', date: '2024-06-02' },
+            { id: '3', name: 'ACSSE_IFM02A2_Chap11.pdf', path: 'pdfs/tRIGONOMETRY.pdf', pages: 7, size: 'Unknown', date: '2024-06-03' }
+        ];
+        let pdfContent = {};
+        let selectedSlides = [];
+        async function loadPDFs() {
+            let loadErrors = [];
+            for (const pdf of pdfFiles) {
+                try {
+                    console.log(`Fetching PDF: ${pdf.path}`);
+                    const response = await fetch(pdf.path);
+                    if (!response.ok) throw new Error(`Failed to fetch ${pdf.name}: ${response.statusText}`);
+                    const arrayBuffer = await response.arrayBuffer();
+                    const typedArray = new Uint8Array(arrayBuffer);
+                    const pdfDoc = await pdfjsLib.getDocument(typedArray).promise;
+                    pdfContent[pdf.id] = [];
+                    pdf.pages = pdfDoc.numPages;
+                    for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++) {
+                        const page = await pdfDoc.getPage(pageNum);
+                        const textContent = await page.getTextContent();
+                        const text = textContent.items.map(item => item.str).join(' ');
+                        pdfContent[pdf.id].push({ page: pageNum, text });
+                    }
+                    console.log(`Loaded ${pdf.name}: ${pdfContent[pdf.id].length} pages`);
+                } catch (error) {
+                    console.error(`Error loading ${pdf.name}:`, error);
+                    loadErrors.push(pdf.name);
                 }
-                console.log(`Loaded ${pdf.name}: ${pdfContent[pdf.id].length} pages`);
-            } catch (error) {
-                console.error(`Error loading ${pdf.name}:`, error);
-                loadErrors.push(pdf.name);
+            }
+            if (loadErrors.length > 0) {
+                alert(`Failed to load PDFs: ${loadErrors.join(', ')}. Please check the files and try again.`);
+            } else {
+                console.log('All PDFs processed');
+                console.log('pdfContent:', pdfContent);
+                updateSlidesViewer();
             }
         }
-        if (loadErrors.length > 0) {
-            alert(`Failed to load PDFs: ${loadErrors.join(', ')}. Please check the files and try again.`);
-        } else {
-            console.log('All PDFs processed');
-            console.log('pdfContent:', pdfContent);
-            updateSlidesViewer();
-        }
-    }
-
-    function updateSlidesViewer() {
-        const container = document.getElementById('slidesContainer');
-        container.innerHTML = '';
-        pdfFiles.forEach(pdf => {
-            const slideCard = document.createElement('div');
-            slideCard.className = `slide-card ${selectedSlides.includes(pdf.id) ? 'selected' : ''}`;
-            slideCard.dataset.id = pdf.id;
-            slideCard.onclick = () => toggleSlideSelection(pdf.id);
-            slideCard.innerHTML = `
-                <div class="thumbnail">
-                    <img src="https://via.placeholder.com/150" alt="${pdf.name}">
-                </div>
-                <div class="content">
-                    <h3 class="title">${pdf.name}</h3>
-                    <div class="meta">
-                        <span>${pdf.pages} pages</span>
-                        <span>${pdf.size}</span>
+        function updateSlidesViewer() {
+            const container = document.getElementById('slidesContainer');
+            container.innerHTML = '';
+            pdfFiles.forEach(pdf => {
+                const slideCard = document.createElement('div');
+                slideCard.className = `slide-card ${selectedSlides.includes(pdf.id) ? 'selected' : ''}`;
+                slideCard.dataset.id = pdf.id;
+                slideCard.onclick = () => toggleSlideSelection(pdf.id);
+                slideCard.innerHTML = `
+                    <div class="thumbnail">
+                        <img src="https://via.placeholder.com/150" alt="${pdf.name}">
                     </div>
-                    <div class="date">${pdf.date}</div>
+                    <div class="content">
+                        <h3 class="title">${pdf.name}</h3>
+                        <div class="meta">
+                            <span>${pdf.pages} pages</span>
+                            <span>${pdf.size}</span>
+                        </div>
+                        <div class="date">${pdf.date}</div>
+                    </div>
+                `;
+                container.appendChild(slideCard);
+            });
+            lucide.createIcons();
+        }
+        async function handleSendMessage(event) {
+            event.preventDefault();
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+            if (!message) return;
+            const messagesContainer = document.querySelector('.chat-messages');
+            const userMessage = document.createElement('div');
+            userMessage.className = 'message user';
+            userMessage.innerHTML = `
+                <div class="message-content">
+                    <p>${message}</p>
+                    <div class="meta">
+                        <span>${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                        <div class="actions">
+                            <button onclick="copyMessage('${message}')"><i data-lucide="copy" class="h-3 w-3"></i></button>
+                        </div>
+                    </div>
+                </div>
+                <div class="avatar"><i data-lucide="user" class="h-4 w-4"></i></div>
+            `;
+            messagesContainer.appendChild(userMessage);
+            input.value = '';
+            const typingIndicator = document.createElement('div');
+            typingIndicator.className = 'message bot typing-indicator';
+            typingIndicator.innerHTML = `
+                <div class="avatar"><i data-lucide="bot" class="h-4 w-4"></i></div>
+                <div class="flex space-x-1">
+                    <div class="dot"></div>
+                    <div class="dot"></div>
+                    <div class="dot"></div>
                 </div>
             `;
-            container.appendChild(slideCard);
-        });
-        lucide.createIcons();
-    }
-
-async function handleSendMessage(event) {
-    event.preventDefault();
-    const input = document.getElementById('chatInput');
-    const message = input.value.trim();
-    if (!message) return;
-
-    const messagesContainer = document.querySelector('.chat-messages');
-    const userMessage = document.createElement('div');
-    userMessage.className = 'message user';
-    userMessage.innerHTML = `
-        <div class="message-content">
-            <p>${message}</p>
-            <div class="meta">
-                <span>${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                <div class="actions">
-                    <button onclick="copyMessage('${message}')"><i data-lucide="copy" class="h-3 w-3"></i></button>
-                </div>
-            </div>
-        </div>
-        <div class="avatar"><i data-lucide="user" class="h-4 w-4"></i></div>
-    `;
-    messagesContainer.appendChild(userMessage);
-    input.value = '';
-
-    const typingIndicator = document.createElement('div');
-    typingIndicator.className = 'message bot typing-indicator';
-    typingIndicator.innerHTML = `
-        <div class="avatar"><i data-lucide="bot" class="h-4 w-4"></i></div>
-        <div class="flex space-x-1">
-            <div class="dot"></div>
-            <div class="dot"></div>
-            <div class="dot"></div>
-        </div>
-    `;
-    messagesContainer.appendChild(typingIndicator);
-    messagesContainer.scrollTop = messagesContainer.scrollHeight;
-
-    let context = '';
-    let relevantPage = 1;
-    let pdfName = '';
-    console.log('pdfContent:', pdfContent);
-    console.log('selectedSlides:', selectedSlides);
-    if (selectedSlides.length > 0) {
-        const selectedId = selectedSlides[0];
-        const selectedPdf = pdfContent[selectedId];
-        console.log('Selected PDF content:', selectedPdf);
-        if (selectedPdf && selectedPdf.length > 0) {
-            for (const page of selectedPdf) {
-                if (page.text.toLowerCase().includes(message.toLowerCase())) {
-                    context = page.text.substring(0, 1000);
-                    relevantPage = page.page;
-                    pdfName = pdfFiles.find(pdf => pdf.id === selectedId).name;
-                    break;
+            messagesContainer.appendChild(typingIndicator);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            let context = '';
+            let relevantPage = 1;
+            let pdfName = '';
+            console.log('pdfContent:', pdfContent);
+            console.log('selectedSlides:', selectedSlides);
+            if (selectedSlides.length > 0) {
+                const selectedId = selectedSlides[0];
+                const selectedPdf = pdfContent[selectedId];
+                console.log('Selected PDF content:', selectedPdf);
+                if (selectedPdf && selectedPdf.length > 0) {
+                    for (const page of selectedPdf) {
+                        if (page.text.toLowerCase().includes(message.toLowerCase())) {
+                            context = page.text.substring(0, 1000);
+                            relevantPage = page.page;
+                            pdfName = pdfFiles.find(pdf => pdf.id === selectedId).name;
+                            break;
+                        }
+                    }
+                    if (!context) {
+                        context = selectedPdf[0].text.substring(0, 1000);
+                        pdfName = pdfFiles.find(pdf => pdf.id === selectedId).name;
+                    }
+                } else {
+                    console.log('No content for selected PDF:', selectedId);
+                    alert('Selected PDF content not loaded. Please ensure PDFs are loaded correctly.');
+                    messagesContainer.removeChild(typingIndicator);
+                    return;
+                }
+            } else {
+                console.log('No slide selected, searching all PDFs');
+                for (const pdfId of Object.keys(pdfContent)) {
+                    const pdfPages = pdfContent[pdfId];
+                    if (pdfPages && pdfPages.length > 0) {
+                        for (const page of pdfPages) {
+                            if (page.text.toLowerCase().includes(message.toLowerCase())) {
+                                context = page.text.substring(0, 1000);
+                                relevantPage = page.page;
+                                pdfName = pdfFiles.find(pdf => pdf.id === pdfId).name;
+                                break;
+                            }
+                        }
+                        if (context) break;
+                    }
+                }
+                if (!context && Object.keys(pdfContent).length > 0) {
+                    const firstPdfId = Object.keys(pdfContent)[0];
+                    const firstPdfPages = pdfContent[firstPdfId];
+                    if (firstPdfPages && firstPdfPages.length > 0) {
+                        context = firstPdfPages[0].text.substring(0, 1000);
+                        pdfName = pdfFiles.find(pdf => pdf.id === firstPdfId).name;
+                    }
                 }
             }
             if (!context) {
-                context = selectedPdf[0].text.substring(0, 1000);
-                pdfName = pdfFiles.find(pdf => pdf.id === selectedId).name;
+                console.log('No context found');
+                alert('No PDF content available. Please ensure PDFs are loaded correctly.');
+                messagesContainer.removeChild(typingIndicator);
+                return;
             }
-        } else {
-            console.log('No content for selected PDF:', selectedId);
-            alert('Selected PDF content not loaded. Please ensure PDFs are loaded correctly.');
-            messagesContainer.removeChild(typingIndicator);
-            return;
-        }
-    } else {
-        console.log('No slide selected, searching all PDFs');
-        for (const pdfId of Object.keys(pdfContent)) {
-            const pdfPages = pdfContent[pdfId];
-            if (pdfPages && pdfPages.length > 0) {
-                for (const page of pdfPages) {
-                    if (page.text.toLowerCase().includes(message.toLowerCase())) {
-                        context = page.text.substring(0, 1000);
-                        relevantPage = page.page;
-                        pdfName = pdfFiles.find(pdf => pdf.id === pdfId).name;
-                        break;
+            try {
+                const payload = {
+                    model: 'deepseek-ai/DeepSeek-V3-0324',
+                    messages: [{ role: 'user', content: `${message}\n\nContext: ${context}` }],
+                    stream: false
+                };
+                console.log('Sending payload:', JSON.stringify(payload));
+                const response = await fetch('/.netlify/functions/query-ai', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (!response.ok) {
+                    let errorData;
+                    try {
+                        errorData = await response.json();
+                    } catch (e) {
+                        errorData = { error: `HTTP ${response.status}`, details: await response.text() };
                     }
+                    throw new Error(errorData.details || errorData.error || `Failed to query AI (Status: ${response.status})`);
                 }
-                if (context) break;
-            }
-        }
-        if (!context && Object.keys(pdfContent).length > 0) {
-            const firstPdfId = Object.keys(pdfContent)[0];
-            const firstPdfPages = pdfContent[firstPdfId];
-            if (firstPdfPages && firstPdfPages.length > 0) {
-                context = firstPdfPages[0].text.substring(0, 1000);
-                pdfName = pdfFiles.find(pdf => pdf.id === firstPdfId).name;
-            }
-        }
-    }
-
-    if (!context) {
-        console.log('No context found');
-        alert('No PDF content available. Please ensure PDFs are loaded correctly.');
-        messagesContainer.removeChild(typingIndicator);
-        return;
-    }
-
-    try {
-        const payload = { question: message, context };
-        console.log('Sending payload:', JSON.stringify(payload));
-        const response = await fetch('/.netlify/functions/query-ai', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.details || errorData.error || `Failed to query AI (Status: ${response.status})`);
-        }
-        const result = await response.json();
-        const answer = result.answer || 'Sorry, I couldn’t find a clear answer.';
-        const botMessage = document.createElement('div');
-        botMessage.className = 'message bot';
-        botMessage.innerHTML = `
-            <div class="avatar"><i data-lucide="bot" class="h-4 w-4"></i></div>
-            <div class="message-content">
-                <p>${answer} (See ${pdfName}, slide ${relevantPage})</p>
-                <div class="meta">
-                    <span>${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                    <div class="actions">
-                        <button onclick="handleReaction('temp', 'like')"><i data-lucide="thumbs-up" class="h-3 w-3"></i></button>
-                        <button onclick="handleReaction('temp', 'dislike')"><i data-lucide="thumbs-down" class="h-3 w-3"></i></button>
-                        <button onclick="regenerateResponse('temp')"><i data-lucide="rotate-ccw" class="h-3 w-3"></i></button>
-                        <button onclick="copyMessage('${answer}')"><i data-lucide="copy" class="h-3 w-3"></i></button>
+                const result = await response.json();
+                const answer = result.choices?.[0]?.message?.content || 'Sorry, I couldn’t find a clear answer.';
+                const botMessage = document.createElement('div');
+                botMessage.className = 'message bot';
+                botMessage.innerHTML = `
+                    <div class="avatar"><i data-lucide="bot" class="h-4 w-4"></i></div>
+                    <div class="message-content">
+                        <p>${answer} (See ${pdfName}, slide ${relevantPage})</p>
+                        <div class="meta">
+                            <span>${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                            <div class="actions">
+                                <button onclick="handleReaction('temp', 'like')"><i data-lucide="thumbs-up" class="h-3 w-3"></i></button>
+                                <button onclick="handleReaction('temp', 'dislike')"><i data-lucide="thumbs-down" class="h-3 w-3"></i></button>
+                                <button onclick="regenerateResponse('temp')"><i data-lucide="rotate-ccw" class="h-3 w-3"></i></button>
+                                <button onclick="copyMessage('${answer}')"><i data-lucide="copy" class="h-3 w-3"></i></button>
+                            </div>
+                        </div>
                     </div>
-                </div>
-            </div>
-        `;
-        messagesContainer.removeChild(typingIndicator);
-        messagesContainer.appendChild(botMessage);
-        messagesContainer.scrollTop = messagesContainer.scrollHeight;
-        lucide.createIcons();
-    } catch (error) {
-        console.error('Error querying AI:', error);
-        alert(`Error querying AI: ${error.message}. Please try again.`);
-        messagesContainer.removeChild(typingIndicator);
-    }
-}
-
-
-    function handleKeyPress(event) {
-        if (event.key === 'Enter' && !event.shiftKey) {
-            event.preventDefault();
-            handleSendMessage(event);
+                `;
+                messagesContainer.removeChild(typingIndicator);
+                messagesContainer.appendChild(botMessage);
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                lucide.createIcons();
+            } catch (error) {
+                console.error('Error querying AI:', error);
+                alert(`Error querying AI: ${error.message}. Please try again.`);
+                messagesContainer.removeChild(typingIndicator);
+            }
         }
-    }
-
-    function setInput(text) {
-        document.getElementById('chatInput').value = text;
-    }
-
-    function copyMessage(content) {
-        navigator.clipboard.writeText(content);
-        alert('Message copied to clipboard!');
-    }
-
-    function handleReaction(id, reaction) {
-        const button = event.target.closest('button');
-        if (reaction === 'like') {
-            button.style.color = button.style.color === 'rgb(74, 222, 128)' ? '' : '#4ade80';
-        } else {
-            button.style.color = button.style.color === 'rgb(248, 113, 113)' ? '' : '#f87171';
+        function handleKeyPress(event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                handleSendMessage(event);
+            }
         }
-        alert(reaction === 'like' ? 'Thanks for the feedback!' : 'Feedback received');
-    }
-
-    function regenerateResponse(id) {
-        alert('Regenerating response...');
-    }
-
-    let viewMode = 'grid';
-
-    function setViewMode(mode) {
-        viewMode = mode;
-        const gridButton = document.getElementById('gridView');
-        const listButton = document.getElementById('listView');
-        const container = document.getElementById('slidesContainer');
-        if (mode === 'grid') {
-            gridButton.classList.add('active');
-            listButton.classList.remove('active');
-            container.className = 'slides-grid';
+        function setInput(text) {
+            document.getElementById('chatInput').value = text;
+        }
+        function copyMessage(content) {
+            navigator.clipboard.writeText(content);
+            alert('Message copied to clipboard!');
+        }
+        function handleReaction(id, reaction) {
+            const button = event.target.closest('button');
+            if (reaction === 'like') {
+                button.style.color = button.style.color === 'rgb(74, 222, 128)' ? '' : '#4ade80';
+            } else {
+                button.style.color = button.style.color === 'rgb(248, 113, 113)' ? '' : '#f87171';
+            }
+            alert(reaction === 'like' ? 'Thanks for the feedback!' : 'Feedback received');
+        }
+        function regenerateResponse(id) {
+            alert('Regenerating response...');
+        }
+        let viewMode = 'grid';
+        function setViewMode(mode) {
+            viewMode = mode;
+            const gridButton = document.getElementById('gridView');
+            const listButton = document.getElementById('listView');
+            const container = document.getElementById('slidesContainer');
+            if (mode === 'grid') {
+                gridButton.classList.add('active');
+                listButton.classList.remove('active');
+                container.className = 'slides-grid';
+                document.querySelectorAll('.slide-card').forEach(card => {
+                    card.classList.remove('list');
+                });
+            } else {
+                listButton.classList.add('active');
+                gridButton.classList.remove('active');
+                container.className = 'slides-list';
+                document.querySelectorAll('.slide-card').forEach(card => {
+                    card.classList.add('list');
+                });
+            }
+        }
+        function searchSlides() {
+            const searchTerm = document.getElementById('slideSearch').value.toLowerCase();
             document.querySelectorAll('.slide-card').forEach(card => {
-                card.classList.remove('list');
-            });
-        } else {
-            listButton.classList.add('active');
-            gridButton.classList.remove('active');
-            container.className = 'slides-list';
-            document.querySelectorAll('.slide-card').forEach(card => {
-                card.classList.add('list');
+                const title = card.querySelector('.title').textContent.toLowerCase();
+                card.style.display = title.includes(searchTerm) ? '' : 'none';
             });
         }
-    }
-
-    function searchSlides() {
-        const searchTerm = document.getElementById('slideSearch').value.toLowerCase();
-        document.querySelectorAll('.slide-card').forEach(card => {
-            const title = card.querySelector('.title').textContent.toLowerCase();
-            card.style.display = title.includes(searchTerm) ? '' : 'none';
-        });
-    }
-
-    function toggleSlideSelection(id) {
-        const card = document.querySelector(`.slide-card[data-id="${id}"]`);
-        if (selectedSlides.includes(id)) {
-            selectedSlides = selectedSlides.filter(slideId => slideId !== id);
-            card.classList.remove('selected');
-        } else {
-            selectedSlides = [id];
-            document.querySelectorAll('.slide-card').forEach(c => c.classList.remove('selected'));
-            card.classList.add('selected');
+        function toggleSlideSelection(id) {
+            const card = document.querySelector(`.slide-card[data-id="${id}"]`);
+            if (selectedSlides.includes(id)) {
+                selectedSlides = selectedSlides.filter(slideId => slideId !== id);
+                card.classList.remove('selected');
+            } else {
+                selectedSlides = [id];
+                document.querySelectorAll('.slide-card').forEach(c => c.classList.remove('selected'));
+                card.classList.add('selected');
+            }
+            const badge = document.getElementById('selectionBadge');
+            badge.textContent = `${selectedSlides.length} slide${selectedSlides.length !== 1 ? 's' : ''} selected`;
+            badge.style.display = selectedSlides.length > 0 ? 'inline-block' : 'none';
         }
-        const badge = document.getElementById('selectionBadge');
-        badge.textContent = `${selectedSlides.length} slide${selectedSlides.length !== 1 ? 's' : ''} selected`;
-        badge.style.display = selectedSlides.length > 0 ? 'inline-block' : 'none';
-    }
-
-    window.onload = function () {
-        loadPDFs();
-    };
-</script>
-
+        window.onload = function () {
+            loadPDFs();
+        };
+    </script>
 </body>
 </html>
