@@ -59,6 +59,9 @@ exports.handler = async function (event) {
             try {
                 errorData = await response.json();
                 console.log('Hugging Face error response:', JSON.stringify(errorData, null, 2));
+                if (errorData.error?.code === 'model_not_supported') {
+                    errorData.suggestion = 'The model may not be available for your account. Try a different model like google/gemma-2-2b-it or check your Hugging Face Inference API settings at https://huggingface.co/settings/inference.';
+                }
             } catch (e) {
                 const text = await response.text();
                 console.log('Non-JSON response:', text);
