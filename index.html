@@ -34,14 +34,6 @@
             --border: 0 0% 80%;
             --input: 0 0% 80%;
             --ring: 43.3 96% 22.7%;
-            --sidebar-background: 0 0% 20%;
-            --sidebar-foreground: 0 0% 100%;
-            --sidebar-primary: 43.3 96% 22.7%;
-            --sidebar-primary-foreground: 0 0% 100%;
-            --sidebar-accent: 0 0% 30%;
-            --sidebar-accent-foreground: 0 0% 100%;
-            --sidebar-border: 0 0% 30%;
-            --sidebar-ring: 43.3 96% 22.7%;
             --radius: 0.5rem;
         }
         body {
@@ -95,8 +87,7 @@
             height: calc(100vh - 4rem);
         }
         .chat-container {
-            width: 50%;
-            border-right: 1px solid rgba(0, 0, 0, 0.2);
+            width: 100%;
             display: flex;
             flex-direction: column;
         }
@@ -239,6 +230,25 @@
         .message-content li {
             margin-bottom: 0.5rem;
         }
+        .message-content .tut-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+        .message-content .tut-buttons button {
+            background: none;
+            border: 1px solid hsl(0 0% 80%);
+            color: hsl(0 0% 0%);
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.75rem;
+            cursor: pointer;
+        }
+        .message-content .tut-buttons button:hover {
+            background: hsl(43.3 96% 22.7%);
+            color: hsl(0 0% 100%);
+        }
         .typing-indicator {
             display: flex;
             align-items: center;
@@ -338,145 +348,6 @@
             color: hsl(0 0% 80%);
             margin-top: 0.5rem;
         }
-        .slides-container {
-            width: 50%;
-            display: flex;
-            flex-direction: column;
-            background: hsl(0 0% 95%);
-        }
-        .slides-header {
-            background: hsl(0 0% 100%);
-            border-bottom: 1px solid hsl(0 0% 90%);
-            padding: 1rem;
-        }
-        .slides-header .title {
-            color: hsl(0 0% 0%);
-            font-size: 1.25rem;
-            font-weight: 600;
-            margin-bottom: 1rem;
-        }
-        .slides-header .controls {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .slides-header .view-toggle button {
-            background: none;
-            border: 1px solid hsl(0 0% 80%);
-            padding: 0.25rem 0.5rem;
-            border-radius: 0.25rem;
-            cursor: pointer;
-        }
-        .slides-header .view-toggle button.active {
-            background: hsl(43.3 96% 22.7%);
-            color: hsl(0 0% 100%);
-            border-color: hsl(43.3 96% 22.7%);
-        }
-        .slides-header .search {
-            position: relative;
-            width: 50%;
-        }
-        .slides-header .search i {
-            position: absolute;
-            left: 0.75rem;
-            top: 50%;
-            transform: translateY(-50%);
-            color: hsl(0 0% 80%);
-        }
-        .slides-header .search input {
-            width: 100%;
-            padding: 0.5rem 0.5rem 0.5rem 2rem;
-            border: 1px solid hsl(0 0% 80%);
-            border-radius: 0.25rem;
-            font-size: 0.875rem;
-        }
-        .slides-header .badge {
-            background: hsl(0 0% 90%);
-            color: hsl(0 0% 0%);
-            padding: 0.25rem 0.5rem;
-            border-radius: 0.25rem;
-            font-size: 0.75rem;
-            margin-top: 0.75rem;
-            display: none;
-        }
-        .slides-content {
-            flex: 1;
-            padding: 1rem;
-            overflow-y: auto;
-        }
-        .slides-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 1rem;
-        }
-        .slides-list {
-            display: flex;
-            flex-direction: column;
-            gap: 0.75rem;
-        }
-        .slide-card {
-            background: hsl(0 0% 100%);
-            border: 1px solid hsl(0 0% 90%);
-            border-radius: 0.5rem;
-            overflow: hidden;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        .slide-card:hover {
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        }
-        .slide-card.selected {
-            border: 2px solid hsl(43.3 96% 22.7%);
-            background: hsl(0 0% 95%);
-        }
-        .slide-card .thumbnail {
-            aspect-ratio: 3/4;
-            background: hsl(0 0% 95%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .slide-card .thumbnail img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-        .slide-card .content {
-            padding: 0.75rem;
-        }
-        .slide-card .title {
-            color: hsl(0 0% 0%);
-            font-size: 0.875rem;
-            font-weight: 500;
-            margin-bottom: 0.25rem;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        .slide-card .meta {
-            display: flex;
-            justify-content: space-between;
-            font-size: 0.75rem;
-            color: hsl(0 0% 80%);
-        }
-        .slide-card .date {
-            font-size: 0.75rem;
-            color: hsl(0 0% 80%);
-        }
-        .slide-card.list {
-            display: flex;
-            align-items: center;
-            padding: 0.75rem;
-        }
-        .slide-card.list .thumbnail {
-            width: 4rem;
-            height: 5rem;
-            flex-shrink: 0;
-        }
-        .slide-card.list .content {
-            flex: 1;
-            padding: 0 0.75rem;
-        }
         .loading-indicator {
             position: fixed;
             top: 50%;
@@ -528,14 +399,17 @@
                 <div class="message bot">
                     <div class="avatar"><i data-lucide="bot" class="h-4 w-4"></i></div>
                     <div class="message-content">
-                        <p>👋 Hello! I'm your study assistant. Select a slide and ask me anything!</p>
+                        <p>👋 Hello! Which tutorial are you on?</p>
+                        <div class="tut-buttons">
+                            <!-- Tutorial buttons will be added dynamically -->
+                        </div>
                         <div class="meta">
                             <span>5:30 PM</span>
                             <div class="actions">
                                 <button onclick="handleReaction('1', 'like')"><i data-lucide="thumbs-up" class="h-3 w-3"></i></button>
                                 <button onclick="handleReaction('1', 'dislike')"><i data-lucide="thumbs-down" class="h-3 w-3"></i></button>
                                 <button onclick="regenerateResponse('1')"><i data-lucide="rotate-ccw" class="h-3 w-3"></i></button>
-                                <button onclick="copyMessage('Hello! I\'m your study assistant...')"><i data-lucide="copy" class="h-3 w-3"></i></button>
+                                <button onclick="copyMessage('Hello! Which tutorial are you on?')"><i data-lucide="copy" class="h-3 w-3"></i></button>
                             </div>
                         </div>
                     </div>
@@ -550,7 +424,7 @@
             <div class="chat-input">
                 <form onsubmit="handleSendMessage(event)">
                     <div class="input-wrapper">
-                        <input type="text" id="chatInput" placeholder="Ask me anything about your slides..." onkeypress="handleKeyPress(event)">
+                        <input type="text" id="chatInput" placeholder="Ask me anything about your selected tutorial..." onkeypress="handleKeyPress(event)">
                         <div class="input-actions">
                             <button type="button"><i data-lucide="paperclip" class="h-4 w-4"></i></button>
                             <button type="button"><i data-lucide="smile" class="h-4 w-4"></i></button>
@@ -559,26 +433,7 @@
                     </div>
                     <button type="submit" class="send-button"><i data-lucide="send" class="h-4 w-4"></i></button>
                 </form>
-                <p class="input-info">Press Enter to send • Shift+Enter for new line • Answers sourced from online knowledge</p>
-            </div>
-        </div>
-        <div class="slides-container">
-            <div class="slides-header">
-                <h2 class="title">Knowledge Base</h2>
-                <div class="controls">
-                    <div class="search">
-                        <i data-lucide="search" class="h-4 w-4"></i>
-                        <input type="text" id="slideSearch" placeholder="Search slides..." oninput="searchSlides()">
-                    </div>
-                    <div class="view-toggle">
-                        <button id="gridView" class="active" onclick="setViewMode('grid')"><i data-lucide="grid" class="h-4 w-4"></i></button>
-                        <button id="listView" onclick="setViewMode('list')"><i data-lucide="list" class="h-4 w-4"></i></button>
-                    </div>
-                </div>
-                <span class="badge" id="selectionBadge">0 slides selected</span>
-            </div>
-            <div class="slides-content">
-                <div id="slidesContainer" class="slides-grid"></div>
+                <p class="input-info">Press Enter to send • Shift+Enter for new line • Answers sourced from your selected tutorial and online knowledge</p>
             </div>
         </div>
     </div>
@@ -609,7 +464,7 @@
                 pdfContent = JSON.parse(cachedContent);
                 keywordMap = JSON.parse(cachedKeywords);
                 console.log('Loaded cached PDF content and keyword map');
-                updateSlidesViewer();
+                showTutorialButtons();
                 loadingIndicator.classList.remove('active');
                 return;
             }
@@ -656,7 +511,7 @@
                 console.log('keywordMap:', keywordMap);
                 localStorage.setItem('pdfContent', JSON.stringify(pdfContent));
                 localStorage.setItem('keywordMap', JSON.stringify(keywordMap));
-                updateSlidesViewer();
+                showTutorialButtons();
             }
             loadingIndicator.classList.remove('active');
         }
@@ -704,29 +559,49 @@
             loadingIndicator.classList.remove('active');
         }
 
-        function updateSlidesViewer() {
-            const container = document.getElementById('slidesContainer');
-            container.innerHTML = '';
+        function showTutorialButtons() {
+            const messagesContainer = document.querySelector('.chat-messages');
+            const tutButtonsContainer = document.querySelector('.tut-buttons');
+            tutButtonsContainer.innerHTML = '';
             pdfFiles.forEach(pdf => {
-                const slideCard = document.createElement('div');
-                slideCard.className = `slide-card ${selectedSlides.includes(pdf.id) ? 'selected' : ''}`;
-                slideCard.dataset.id = pdf.id;
-                slideCard.onclick = () => toggleSlideSelection(pdf.id);
-                slideCard.innerHTML = `
-                    <div class="thumbnail">
-                        <img src="${pdfThumbnails[pdf.id]?.[1] || '/static/placeholder.png'}" alt="${pdf.name}">
-                    </div>
-                    <div class="content">
-                        <h3 class="title">${pdf.name}</h3>
-                        <div class="meta">
-                            <span>${pdf.pages} pages</span>
-                            <span>${pdf.size}</span>
-                        </div>
-                        <div class="date">${pdf.date}</div>
-                    </div>
-                `;
-                container.appendChild(slideCard);
+                const button = document.createElement('button');
+                button.textContent = pdf.name;
+                button.onclick = () => selectTutorial(pdf.id);
+                tutButtonsContainer.appendChild(button);
             });
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            lucide.createIcons();
+        }
+
+        async function selectTutorial(id) {
+            const messagesContainer = document.querySelector('.chat-messages');
+            selectedSlides = [id];
+            const pdf = pdfFiles.find(p => p.id === id);
+            const botMessage = document.createElement('div');
+            botMessage.className = 'message bot';
+            botMessage.innerHTML = `
+                <div class="avatar"><i data-lucide="bot" class="h-4 w-4"></i></div>
+                <div class="message-content">
+                    <p>Great! You've selected <strong>${pdf.name}</strong>. Ask me anything about this tutorial!</p>
+                    <div class="meta">
+                        <span>${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                        <div class="actions">
+                            <button onclick="handleReaction('temp', 'like')"><i data-lucide="thumbs-up" class="h-3 w-3"></i></button>
+                            <button onclick="handleReaction('temp', 'dislike')"><i data-lucide="thumbs-down" class="h-3 w-3"></i></button>
+                            <button onclick="regenerateResponse('temp')"><i data-lucide="rotate-ccw" class="h-3 w-3"></i></button>
+                            <button onclick="copyMessage('Great! You\'ve selected ${pdf.name}. Ask me anything about this tutorial!')"><i data-lucide="copy" class="h-3 w-3"></i></button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            messagesContainer.appendChild(botMessage);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            // Process OCR for all pages of selected PDF
+            for (let pageNum = 1; pageNum <= pdf.pages; pageNum++) {
+                if (!pdfContent[id][pageNum - 1].text) {
+                    await processPageOCR(id, pageNum);
+                }
+            }
             lucide.createIcons();
         }
 
@@ -779,6 +654,33 @@
             const input = document.getElementById('chatInput');
             const message = input.value.trim();
             if (!message) return;
+            if (selectedSlides.length === 0) {
+                const messagesContainer = document.querySelector('.chat-messages');
+                const botMessage = document.createElement('div');
+                botMessage.className = 'message bot';
+                botMessage.innerHTML = `
+                    <div class="avatar"><i data-lucide="bot" class="h-4 w-4"></i></div>
+                    <div class="message-content">
+                        <p>Please select a tutorial first.</p>
+                        <div class="tut-buttons">
+                            ${pdfFiles.map(pdf => `<button onclick="selectTutorial('${pdf.id}')">${pdf.name}</button>`).join('')}
+                        </div>
+                        <div class="meta">
+                            <span>${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                            <div class="actions">
+                                <button onclick="handleReaction('temp', 'like')"><i data-lucide="thumbs-up" class="h-3 w-3"></i></button>
+                                <button onclick="handleReaction('temp', 'dislike')"><i data-lucide="thumbs-down" class="h-3 w-3"></i></button>
+                                <button onclick="regenerateResponse('temp')"><i data-lucide="rotate-ccw" class="h-3 w-3"></i></button>
+                                <button onclick="copyMessage('Please select a tutorial first.')"><i data-lucide="copy" class="h-3 w-3"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                messagesContainer.appendChild(botMessage);
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                lucide.createIcons();
+                return;
+            }
             const messagesContainer = document.querySelector('.chat-messages');
             const userMessage = document.createElement('div');
             userMessage.className = 'message user';
@@ -811,69 +713,31 @@
             let context = '';
             let relevantPage = 1;
             let pdfName = '';
-            if (selectedSlides.length > 0) {
-                const selectedId = selectedSlides[0];
-                const selectedPdf = pdfContent[selectedId];
-                if (selectedPdf && selectedPdf.length > 0) {
-                    const queryWords = message.toLowerCase().split(/\s+/);
-                    // Ensure OCR is done for relevant pages
-                    for (let pageNum = 1; pageNum <= selectedPdf.length; pageNum++) {
-                        if (!pdfContent[selectedId][pageNum - 1].text) {
-                            await processPageOCR(selectedId, pageNum);
-                        }
+            const selectedId = selectedSlides[0];
+            const selectedPdf = pdfContent[selectedId];
+            if (selectedPdf && selectedPdf.length > 0) {
+                const queryWords = message.toLowerCase().split(/\s+/);
+                // Ensure OCR is done for all pages
+                for (let pageNum = 1; pageNum <= selectedPdf.length; pageNum++) {
+                    if (!pdfContent[selectedId][pageNum - 1].text) {
+                        await processPageOCR(selectedId, pageNum);
                     }
-                    for (const page of selectedPdf) {
-                        if (page.text && queryWords.some(word => keywordMap[selectedId][word]?.includes(page.page))) {
-                            context = page.text.substring(0, 1000);
-                            relevantPage = page.page;
-                            pdfName = pdfFiles.find(pdf => pdf.id === selectedId).name;
-                            break;
-                        }
-                    }
-                    if (!context) {
-                        context = selectedPdf[0].text?.substring(0, 1000) || '';
+                }
+                for (const page of selectedPdf) {
+                    if (page.text && queryWords.some(word => keywordMap[selectedId][word]?.includes(page.page))) {
+                        context = page.text.substring(0, 1000);
+                        relevantPage = page.page;
                         pdfName = pdfFiles.find(pdf => pdf.id === selectedId).name;
+                        break;
                     }
-                } else {
-                    console.log('No content for selected PDF:', selectedId);
-                    alert('Selected PDF content not loaded. Please ensure PDFs are loaded correctly.');
-                    messagesContainer.removeChild(typingIndicator);
-                    return;
+                }
+                if (!context) {
+                    context = selectedPdf[0].text?.substring(0, 1000) || '';
+                    pdfName = pdfFiles.find(pdf => pdf.id === selectedId).name;
                 }
             } else {
-                console.log('No slide selected, searching all PDFs');
-                const queryWords = message.toLowerCase().split(/\s+/);
-                for (const pdfId of Object.keys(pdfContent)) {
-                    const pdfPages = pdfContent[pdfId];
-                    if (pdfPages && pdfPages.length > 0) {
-                        for (let pageNum = 1; pageNum <= pdfPages.length; pageNum++) {
-                            if (!pdfContent[pdfId][pageNum - 1].text) {
-                                await processPageOCR(pdfId, pageNum);
-                            }
-                        }
-                        for (const page of pdfPages) {
-                            if (page.text && queryWords.some(word => keywordMap[pdfId][word]?.includes(page.page))) {
-                                context = page.text.substring(0, 1000);
-                                relevantPage = page.page;
-                                pdfName = pdfFiles.find(pdf => pdf.id === pdfId).name;
-                                break;
-                            }
-                        }
-                        if (context) break;
-                    }
-                }
-                if (!context && Object.keys(pdfContent).length > 0) {
-                    const firstPdfId = Object.keys(pdfContent)[0];
-                    const firstPdfPages = pdfContent[firstPdfId];
-                    if (firstPdfPages && firstPdfPages.length > 0 && firstPdfPages[0].text) {
-                        context = firstPdfPages[0].text.substring(0, 1000);
-                        pdfName = pdfFiles.find(pdf => pdf.id === firstPdfId).name;
-                    }
-                }
-            }
-            if (!context) {
-                console.log('No context found');
-                alert('No PDF content available. Please ensure PDFs are loaded correctly.');
+                console.log('No content for selected PDF:', selectedId);
+                alert('Selected tutorial content not loaded. Please try again.');
                 messagesContainer.removeChild(typingIndicator);
                 return;
             }
@@ -950,59 +814,6 @@
             const input = document.getElementById('chatInput');
             input.value = document.querySelector(`.message[data-id="${id}"] .message-content p`)?.textContent || '';
             handleSendMessage(new Event('submit'));
-        }
-
-        let viewMode = 'grid';
-        function setViewMode(mode) {
-            viewMode = mode;
-            const gridButton = document.getElementById('gridView');
-            const listButton = document.getElementById('listView');
-            const container = document.getElementById('slidesContainer');
-            if (mode === 'grid') {
-                gridButton.classList.add('active');
-                listButton.classList.remove('active');
-                container.className = 'slides-grid';
-                document.querySelectorAll('.slide-card').forEach(card => {
-                    card.classList.remove('list');
-                });
-            } else {
-                listButton.classList.add('active');
-                gridButton.classList.remove('active');
-                container.className = 'slides-list';
-                document.querySelectorAll('.slide-card').forEach(card => {
-                    card.classList.add('list');
-                });
-            }
-        }
-
-        function searchSlides() {
-            const searchTerm = document.getElementById('slideSearch').value.toLowerCase();
-            document.querySelectorAll('.slide-card').forEach(card => {
-                const title = card.querySelector('.title').textContent.toLowerCase();
-                card.style.display = title.includes(searchTerm) ? '' : 'none';
-            });
-        }
-
-        async function toggleSlideSelection(id) {
-            const card = document.querySelector(`.slide-card[data-id="${id}"]`);
-            if (selectedSlides.includes(id)) {
-                selectedSlides = selectedSlides.filter(slideId => slideId !== id);
-                card.classList.remove('selected');
-            } else {
-                selectedSlides = [id];
-                document.querySelectorAll('.slide-card').forEach(c => c.classList.remove('selected'));
-                card.classList.add('selected');
-                // Process OCR for all pages of selected PDF
-                const pdf = pdfFiles.find(p => p.id === id);
-                for (let pageNum = 1; pageNum <= pdf.pages; pageNum++) {
-                    if (!pdfContent[id][pageNum - 1].text) {
-                        await processPageOCR(id, pageNum);
-                    }
-                }
-            }
-            const badge = document.getElementById('selectionBadge');
-            badge.textContent = `${selectedSlides.length} slide${selectedSlides.length !== 1 ? 's' : ''} selected`;
-            badge.style.display = selectedSlides.length > 0 ? 'inline-block' : 'none';
         }
 
         window.onload = function () {
