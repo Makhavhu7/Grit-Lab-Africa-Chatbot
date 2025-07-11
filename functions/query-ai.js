@@ -22,7 +22,7 @@ exports.handler = async function (event) {
         };
     }
 
-    const { provider, model, messages, stream, temperature, max_tokens } = data;
+    const { provider, model, messages, stream, temperature, max_tokens, api_base } = data;
     if (!provider || !model || !messages) {
         console.log('Missing provider, model, or messages:', { provider, model, messages });
         return {
@@ -31,21 +31,26 @@ exports.handler = async function (event) {
         };
     }
 
-    // Primary provider: LiteLLM
     if (provider === 'litellm') {
         const LITELLM_API_KEY = process.env.LITELLM_API_KEY;
-        const LITELLM_BASE_URL = process.env.LITELLM_BASE_URL;
-        if (!LITELLM_API_KEY || !LITELLM_BASE_URL) {
-            console.log('LITELLM_API_KEY or LITELLM_BASE_URL is not set');
+        if (!LITELLM_API_KEY) {
+            console.log('LITELLM_API_KEY is not set');
             return {
                 statusCode: 500,
-                body: JSON.stringify({ error: 'Server configuration error: LITELLM_API_KEY or LITELLM_BASE_URL not set' })
+                body: JSON.stringify({ error: 'Server configuration error: LITELLM_API_KEY not set' })
+            };
+        }
+        if (!api_base) {
+            console.log('api_base is missing for LiteLLM provider');
+            return {
+                statusCode: 400,
+                body: JSON.stringify({ error: 'api_base is required for LiteLLM provider' })
             };
         }
 
-        const API_URL = `${LITELLM_BASE_URL}/chat/completions`;
+        const API_URL = `${api_base}/v1/chat/completions`;
         try {
-            console.log('Calling LiteLLM API with model:', model);
+            console.log('Calling LiteLLM API with model:', model, 'api_base:', api_base);
             const response = await fetch(API_URL, {
                 method: 'POST',
                 headers: {
@@ -62,11 +67,11 @@ exports.handler = async function (event) {
                     errorData = await response.json();
                     console.log('LiteLLM error response:', JSON.stringify(errorData, null, 2));
                     if (response.status === 429) {
-                        errorData.suggestion = 'LiteLLM rate limit exceeded. Wait a few seconds or check your proxy configuration.';
+                        errorData.suggestion = 'LiteLLM rate limit exceeded. Wait a few seconds or check your Hugging Face plan at https://huggingface.co.';
                     } else if (response.status === 401) {
-                        errorData.suggestion = 'LiteLLM: Invalid API key. Verify LITELLM_API_KEY in Netlify environment variables.';
+                        errorData.suggestion = 'LiteLLM: Invalid API key. Verify LITELLM_API_KEY in Netlify environment variables and Hugging Face dashboard.';
                     } else if (errorData.error?.code === 'model_not_supported') {
-                        errorData.suggestion = 'LiteLLM: The model is not supported. Check your config.yaml or available models.';
+                        errorData.suggestion = 'LiteLLM: The model is not supported. Check available models at https://huggingface.co.';
                     }
                 } catch (e) {
                     const text = await response.text();
@@ -89,9 +94,7 @@ exports.handler = async function (event) {
                 body: JSON.stringify({ error: 'Failed to query LiteLLM', details: error.message })
             };
         }
-    } 
-    // Fallback 1: Portkey
-    else if (provider === 'portkey') {
+    } else if (provider === 'portkey') {
         const PORTKEY_API_KEY = process.env.PORTKEY_API_KEY;
         const PORTKEY_VIRTUAL_KEY = process.env.PORTKEY_VIRTUAL_KEY;
         if (!PORTKEY_API_KEY || !PORTKEY_VIRTUAL_KEY) {
@@ -149,9 +152,7 @@ exports.handler = async function (event) {
                 body: JSON.stringify({ error: 'Failed to query Portkey AI', details: error.message })
             };
         }
-    } 
-    // Fallback 2: Together AI
-    else if (provider === 'together') {
+    } else if (provider === 'together') {
         const TOGETHER_API_KEY = process.env.TOGETHER_API_KEY;
         if (!TOGETHER_API_KEY) {
             console.log('TOGETHER_API_KEY is not set');
