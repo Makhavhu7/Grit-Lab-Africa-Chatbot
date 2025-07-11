@@ -32,13 +32,13 @@ exports.handler = async function (event) {
     }
 
     try {
-        console.log('Querying Wikipedia for:', query);
+        console.log('Querying for:', query);
         const searchUrl = `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(query)}&format=json&origin=*`;
         console.log('Search URL:', searchUrl);
         const searchResponse = await fetch(searchUrl);
         if (!searchResponse.ok) {
             const errorText = await searchResponse.text();
-            throw new Error(`Wikipedia search failed: HTTP ${searchResponse.status}, ${errorText}`);
+            throw new Error(`Search failed: HTTP ${searchResponse.status}, ${errorText}`);
         }
         const searchData = await searchResponse.json();
         console.log('Search response:', JSON.stringify(searchData, null, 2));
@@ -46,7 +46,7 @@ exports.handler = async function (event) {
         if (!page) {
             return {
                 statusCode: 200,
-                body: JSON.stringify({ content: 'No relevant Wikipedia page found.' })
+                body: JSON.stringify({ content: 'No relevant information found.' })
             };
         }
 
@@ -55,7 +55,7 @@ exports.handler = async function (event) {
         const pageResponse = await fetch(pageUrl);
         if (!pageResponse.ok) {
             const errorText = await pageResponse.text();
-            throw new Error(`Wikipedia page fetch failed: HTTP ${pageResponse.status}, ${errorText}`);
+            throw new Error(`Page fetch failed: HTTP ${pageResponse.status}, ${errorText}`);
         }
         const pageData = await pageResponse.json();
         console.log('Page response:', JSON.stringify(pageData, null, 2));
@@ -63,19 +63,19 @@ exports.handler = async function (event) {
         let content = pageData.query.pages[pageId].extract || 'No content available.';
         
         if (context) {
-            content = `From your slides: ${context.substring(0, 200)}...\n\nFrom Wikipedia: ${content}`;
+            content = `From your slides: ${context.substring(0, 200)}...<br><br>${content}`;
         }
 
-        console.log('Wikipedia response:', content.substring(0, 100) + '...');
+        console.log('Response:', content.substring(0, 100) + '...');
         return {
             statusCode: 200,
             body: JSON.stringify({ content })
         };
     } catch (error) {
-        console.error('Wikipedia API error:', error.message, error.stack);
+        console.error('API error:', error.message, error.stack);
         return {
             statusCode: 500,
-            body: JSON.stringify({ error: 'Failed to query Wikipedia', details: error.message })
+            body: JSON.stringify({ error: 'Failed to query server', details: error.message })
         };
     }
 };

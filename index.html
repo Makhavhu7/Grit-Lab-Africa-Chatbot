@@ -224,6 +224,21 @@
             background: rgba(255, 255, 255, 0.1);
             border-radius: 0.25rem;
         }
+        .message-content .section-title {
+            font-weight: 600;
+            font-size: 1rem;
+            margin-bottom: 0.5rem;
+        }
+        .message-content .section-content {
+            margin-bottom: 1rem;
+        }
+        .message-content ul {
+            padding-left: 1.5rem;
+            margin: 0.5rem 0;
+        }
+        .message-content li {
+            margin-bottom: 0.5rem;
+        }
         .typing-indicator {
             display: flex;
             align-items: center;
@@ -507,7 +522,7 @@
                         <p class="subtitle"><i data-lucide="book-open" class="h-3 w-3"></i>Ready to help with your slides</p>
                     </div>
                 </div>
-                <span class="badge">Wikipedia Powered</span>
+                <span class="badge">Knowledge Powered</span>
             </div>
             <div class="chat-messages">
                 <div class="message bot">
@@ -544,7 +559,7 @@
                     </div>
                     <button type="submit" class="send-button"><i data-lucide="send" class="h-4 w-4"></i></button>
                 </form>
-                <p class="input-info">Press Enter to send • Shift+Enter for new line • Answers sourced from Wikipedia</p>
+                <p class="input-info">Press Enter to send • Shift+Enter for new line • Answers sourced from online knowledge</p>
             </div>
         </div>
         <div class="slides-container">
@@ -613,7 +628,7 @@
 
                     // Generate thumbnail for first page only
                     const page = await pdfDoc.getPage(1);
-                    const viewport = page.getViewport({ scale: 0.5 }); // Lower scale for faster rendering
+                    const viewport = page.getViewport({ scale: 0.5 });
                     const canvas = document.createElement('canvas');
                     const context = canvas.getContext('2d');
                     canvas.height = viewport.height;
@@ -718,14 +733,42 @@
         function enhanceResponse(text, query) {
             let enhanced = text.substring(0, 500);
             if (query.toLowerCase().includes('explain simply')) {
-                enhanced = `**Simplified Explanation**: ${enhanced}\n\n**Key Points**:\n- ${enhanced.split('. ')[0]}.\n- See slide for more details.`;
+                enhanced = `
+                    <div class="section-title">Simplified Explanation</div>
+                    <div class="section-content">${enhanced}</div>
+                    <div class="section-title">Key Points</div>
+                    <ul>
+                        <li>${enhanced.split('. ')[0]}.</li>
+                        <li>See slide for more details.</li>
+                    </ul>
+                `;
             } else if (query.toLowerCase().includes('practice questions')) {
                 const keyTerms = enhanced.split(' ').filter(word => word.length > 4).slice(0, 2);
-                enhanced = `**Practice Questions**:\n1. What is ${keyTerms[0] || 'the concept'}?\n2. How does ${keyTerms[1] || 'it'} relate to the topic?\n\n**Source**: ${enhanced}`;
+                enhanced = `
+                    <div class="section-title">Practice Questions</div>
+                    <ul>
+                        <li>What is ${keyTerms[0] || 'the concept'}?</li>
+                        <li>How does ${keyTerms[1] || 'it'} relate to the topic?</li>
+                    </ul>
+                    <div class="section-title">Source</div>
+                    <div class="section-content">${enhanced}</div>
+                `;
             } else if (query.toLowerCase().includes('summarize')) {
-                enhanced = `**Summary**:\n- ${enhanced.split('. ')[0]}.\n- ${enhanced.split('. ')[1] || 'See slide.'}`;
+                enhanced = `
+                    <div class="section-title">Summary</div>
+                    <ul>
+                        <li>${enhanced.split('. ')[0]}.</li>
+                        <li>${enhanced.split('. ')[1] || 'See slide.'}</li>
+                    </ul>
+                `;
             } else if (query.toLowerCase().includes('examples')) {
-                enhanced = `**Example**: ${enhanced}\nImagine ${enhanced.split('. ')[0]} in a real-world scenario.`;
+                enhanced = `
+                    <div class="section-title">Example</div>
+                    <div class="section-content">${enhanced}</div>
+                    <div class="section-content">Imagine ${enhanced.split('. ')[0]} in a real-world scenario.</div>
+                `;
+            } else {
+                enhanced = `<div class="section-content">${enhanced}</div>`;
             }
             enhanced = enhanced.replace(new RegExp(`(${query.split(' ').join('|')})`, 'gi'), '<strong>$1</strong>');
             return enhanced;
@@ -835,7 +878,7 @@
                 return;
             }
             try {
-                console.log('Sending query to Wikipedia:', message);
+                console.log('Sending query to server:', message);
                 const response = await fetch('/.netlify/functions/query-wikipedia', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -843,17 +886,17 @@
                 });
                 if (!response.ok) {
                     const errorText = await response.text();
-                    throw new Error(`Wikipedia API failed: HTTP ${response.status}, ${errorText}`);
+                    throw new Error(`Server query failed: HTTP ${response.status}, ${errorText}`);
                 }
                 const result = await response.json();
-                let answer = result.content || 'Sorry, I couldn’t find relevant information on Wikipedia.';
+                let answer = result.content || 'Sorry, I couldn’t find relevant information.';
                 answer = enhanceResponse(answer, message);
                 const botMessage = document.createElement('div');
                 botMessage.className = 'message bot';
                 botMessage.innerHTML = `
                     <div class="avatar"><i data-lucide="bot" class="h-4 w-4"></i></div>
                     <div class="message-content">
-                        <p>${answer} (See ${pdfName}, slide ${relevantPage}) [Source: Wikipedia]</p>
+                        <p>${answer}<br><br><em>Source: ${pdfName}, slide ${relevantPage}</em></p>
                         <div class="meta">
                             <span>${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                             <div class="actions">
@@ -870,8 +913,8 @@
                 messagesContainer.scrollTop = messagesContainer.scrollHeight;
                 lucide.createIcons();
             } catch (error) {
-                console.error('Wikipedia API error:', error.message);
-                alert(`Error querying Wikipedia: ${error.message}. Please try again.`);
+                console.error('Server query error:', error.message);
+                alert(`Error querying server: ${error.message}. Please try again.`);
                 messagesContainer.removeChild(typingIndicator);
             }
         }
