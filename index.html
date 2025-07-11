@@ -481,8 +481,18 @@
         };
         let pdfContent = {};
         let keywordMap = {};
+        let pdfQuestions = {};
         let selectedSlides = [];
         let pdfThumbnails = {};
+
+        // Simple fuzzy matching function using token overlap
+        function fuzzyMatch(query, question) {
+            const cleanQuery = query.toLowerCase().replace(/[^\w\s]/g, '').split(/\s+/).filter(w => w.length > 2);
+            const cleanQuestion = question.toLowerCase().replace(/[^\w\s]/g, '').split(/\s+/).filter(w => w.length > 2);
+            const intersection = cleanQuery.filter(word => cleanQuestion.includes(word));
+            const score = intersection.length / Math.max(cleanQuery.length, cleanQuestion.length);
+            return { score, question };
+        }
 
         async function loadPDFs() {
             const loadingIndicator = document.getElementById('loadingIndicator');
@@ -500,6 +510,7 @@
                     pdfContent[pdf.id] = [];
                     keywordMap[pdf.id] = {};
                     pdfThumbnails[pdf.id] = [];
+                    pdfQuestions[pdf.id] = [];
 
                     const page = await pdfDoc.getPage(1);
                     const viewport = page.getViewport({ scale: 0.5 });
@@ -541,7 +552,7 @@
                 const typedArray = new Uint8Array(arrayBuffer);
                 const pdfDoc = await pdfjsLib.getDocument(typedArray).promise;
                 const page = await pdfDoc.getPage(pageNum);
-                const viewport = page.getViewport({ scale: 2.0 }); // Increased scale for better OCR
+                const viewport = page.getViewport({ scale: 2.0 });
                 const canvas = document.createElement('canvas');
                 const context = canvas.getContext('2d');
                 canvas.height = viewport.height;
@@ -561,6 +572,31 @@
                         keywordMap[pdfId][word].push(pageNum);
                     }
                 });
+
+                // Extract questions from Section A (assuming numbered list format)
+                if (pdfId === '1' && pageNum === 1) { // JBS_GL_TUT_1, page 1
+                    const lines = text.split('\n').map(line => line.trim()).filter(line => line);
+                    let currentQuestion = '';
+                    let questionStart = false;
+                    lines.forEach(line => {
+                        if (line.match(/Section A:/i)) {
+                            questionStart = true;
+                            return;
+                        }
+                        if (questionStart && line.match(/^\d+\.\s/)) {
+                            if (currentQuestion) {
+                                pdfQuestions[pdfId].push({ question: currentQuestion, page: pageNum });
+                            }
+                            currentQuestion = line.replace(/^\d+\.\s/, '');
+                        } else if (questionStart && currentQuestion && !line.match(/^\d+\.\s/)) {
+                            currentQuestion += ' ' + line;
+                        }
+                    });
+                    if (currentQuestion) {
+                        pdfQuestions[pdfId].push({ question: currentQuestion, page: pageNum });
+                    }
+                }
+
                 console.log(`OCR completed for ${pdfFiles.find(p => p.id === pdfId).name}, page ${pageNum}`);
             } catch (error) {
                 console.error(`OCR error for ${pdfFiles.find(p => p.id === pdfId).name}, page ${pageNum}:`, error);
@@ -609,6 +645,7 @@
             for (let pageNum = 1; pageNum <= pdf.pages; pageNum++) {
                 await processPageOCR(id, pageNum);
             }
+            console.log(`Extracted questions for ${pdf.name}:`, pdfQuestions[id]);
             lucide.createIcons();
         }
 
@@ -795,6 +832,9 @@
             const selectedId = selectedSlides[0];
             const pdfName = pdfFiles.find(pdf => pdf.id === selectedId).name;
 
+            // Simulate thinking time
+            await new Promise(resolve => setTimeout(resolve, 1500));
+
             // Check for pre-defined answer
             const normalizedQuery = message.trim().replace(/\s+/g, ' ').toLowerCase();
             const preDefinedAnswer = questionAnswers[selectedId] && Object.keys(questionAnswers[selectedId]).find(key => 
@@ -828,26 +868,39 @@
                 return;
             }
 
-            // Fallback to OCR and Wikipedia
+            // Fuzzy match against OCR-extracted questions
+            const selectedPdf = pdfContent[selectedId];
             let context = '';
             let relevantPages = [];
-            const selectedPdf = pdfContent[selectedId];
+            let matchedQuestion = null;
             if (selectedPdf && selectedPdf.length > 0) {
-                const queryWords = message.toLowerCase().split(/\s+/);
                 for (let pageNum = 1; pageNum <= selectedPdf.length; pageNum++) {
                     if (!pdfContent[selectedId][pageNum - 1].text) {
                         await processPageOCR(selectedId, pageNum);
                     }
                 }
-                for (const page of selectedPdf) {
-                    if (page.text && queryWords.some(word => keywordMap[selectedId][word]?.includes(page.page))) {
-                        context += page.text + '\n';
-                        relevantPages.push(page.page);
+                const questions = pdfQuestions[selectedId] || [];
+                if (questions.length > 0) {
+                    const matches = questions.map(q => fuzzyMatch(normalizedQuery, q.question));
+                    matches.sort((a, b) => b.score - a.score);
+                    if (matches[0].score > 0.5) { // Threshold for a good match
+                        matchedQuestion = matches[0].question;
+                        relevantPages = [matches[0].question.page];
+                        context = pdfContent[selectedId][matches[0].question.page - 1].text;
                     }
                 }
-                if (!context) {
-                    context = selectedPdf[0].text || '';
-                    relevantPages.push(1);
+                if (!matchedQuestion) {
+                    const queryWords = normalizedQuery.split(/\s+/);
+                    for (const page of selectedPdf) {
+                        if (page.text && queryWords.some(word => keywordMap[selectedId][word]?.includes(page.page))) {
+                            context += page.text + '\n';
+                            relevantPages.push(page.page);
+                        }
+                    }
+                    if (!context) {
+                        context = selectedPdf[0].text || '';
+                        relevantPages.push(1);
+                    }
                 }
             } else {
                 console.log('No content for selected PDF:', selectedId);
@@ -857,19 +910,58 @@
             }
 
             try {
-                console.log('Sending query to server:', message);
-                const response = await fetch('/.netlify/functions/query-wikipedia', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ query: message, context })
-                });
-                if (!response.ok) {
-                    const errorText = await response.text();
-                    throw new Error(`Server query failed: HTTP ${response.status}, ${errorText}`);
+                let answer;
+                if (matchedQuestion) {
+                    // Use OCR context to answer, supplemented by general knowledge
+                    answer = `
+                        <div class="section-content">
+                            <p>Based on your slides, the question "${matchedQuestion}" relates to the following content:</p>
+                            <p>${context.substring(0, 1000)}...</p>
+                            <p>Since the slides list the question without a direct answer, here's an explanation:</p>
+                    `;
+                    // Provide specific answers for known questions
+                    if (matchedQuestion.toLowerCase().includes('syntax') && matchedQuestion.toLowerCase().includes('semantics')) {
+                        answer += `
+                            <p>The <strong>syntax</strong> of an algorithm refers to the rules governing its structure and notation, ensuring it is written correctly (e.g., proper pseudocode formatting or programming language grammar). The <strong>semantics</strong> of an algorithm refers to the meaning or effect of those instructions, i.e., what the algorithm does when executed (e.g., sorting a list or computing a sum).</p>
+                            <p><strong>Example</strong>: In pseudocode, <code>IF x > 0 THEN print x</code> has correct syntax if it follows the language's rules. Its semantics ensure that it prints x if x is positive.</p>
+                        `;
+                    } else if (matchedQuestion.toLowerCase().includes('boolean') && matchedQuestion.toLowerCase().includes('logical operator')) {
+                        answer += `
+                            <p>A <strong>Boolean value</strong> is a data type that is either TRUE or FALSE, representing logical truth values (e.g., TRUE, FALSE). <strong>Logical operators</strong> operate on Boolean values to produce another Boolean value. There are three main logical operators: AND (true if both operands are true), OR (true if at least one is true), and NOT (inverts the truth value).</p>
+                            <p><strong>Example</strong>: If p is TRUE and q is FALSE, then p AND q is FALSE, p OR q is TRUE, and NOT p is FALSE.</p>
+                        `;
+                    } else if (matchedQuestion.toLowerCase().includes('data structure') && matchedQuestion.toLowerCase().includes('algorithm')) {
+                        answer += `
+                            <p>A <strong>data structure</strong> is a way to organize and store data for efficient access (e.g., arrays, lists, trees). An <strong>algorithm</strong> is a set of instructions to solve a problem (e.g., sorting, searching). Data structures provide the framework for data, while algorithms process that data.</p>
+                            <p><strong>Example</strong>: An array (data structure) stores numbers, and quicksort (algorithm) sorts them.</p>
+                        `;
+                    } else if (matchedQuestion.toLowerCase().includes('dry-running') && matchedQuestion.toLowerCase().includes('desk-checking')) {
+                        answer += `
+                            <p><strong>True</strong>. <strong>Dry-running</strong> involves manually stepping through an algorithm to trace its execution, often using a table to track variables. <strong>Desk-checking</strong> involves reviewing the code for errors without executing it. Dry-running simulates execution, while desk-checking focuses on code review.</p>
+                            <p><strong>Example</strong>: Dry-running a loop tracks variable changes; desk-checking scans for syntax errors.</p>
+                        `;
+                    } else {
+                        answer += `
+                            <p>The slides do not provide a direct answer to this question. Please clarify or provide more context for a detailed response.</p>
+                        `;
+                    }
+                    answer = enhanceResponse(answer, message, relevantPages);
+                } else {
+                    // Fallback to Wikipedia
+                    console.log('Sending query to server:', message);
+                    const response = await fetch('/.netlify/functions/query-wikipedia', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ query: message, context })
+                    });
+                    if (!response.ok) {
+                        const errorText = await response.text();
+                        throw new Error(`Server query failed: HTTP ${response.status}, ${errorText}`);
+                    }
+                    const result = await response.json();
+                    answer = result.content || 'Sorry, I couldn’t find relevant information.';
+                    answer = enhanceResponse(answer, message, relevantPages);
                 }
-                const result = await response.json();
-                let answer = result.content || 'Sorry, I couldn’t find relevant information.';
-                answer = enhanceResponse(answer, message, relevantPages);
                 const botMessage = document.createElement('div');
                 botMessage.className = 'message bot';
                 botMessage.innerHTML = `
