@@ -772,7 +772,7 @@
                 const response = await fetch('/.netlify/functions/query-ai', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ ...payload, provider: 'litellm', model: 'huggingface/WizardLM/WizardCoder-Python-34B-V1.0', api_base: 'YOUR_HUGGINGFACE_ENDPOINT_HERE' })
+                    body: JSON.stringify({ ...payload, provider: 'litellm', model: 'huggingface/WizardLM/WizardCoder-Python-34B-V1.0', api_base: 'YOUR_ACTUAL_HF_ENDPOINT' })
                 });
                 if (!response.ok) {
                     throw new Error(`LiteLLM failed: HTTP ${response.status} ${response.statusText}`);
