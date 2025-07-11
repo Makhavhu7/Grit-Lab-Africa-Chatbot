@@ -31,7 +31,67 @@ exports.handler = async function (event) {
         };
     }
 
-    if (provider === 'portkey') {
+    // Primary provider: LiteLLM
+    if (provider === 'litellm') {
+        const LITELLM_API_KEY = process.env.LITELLM_API_KEY;
+        const LITELLM_BASE_URL = process.env.LITELLM_BASE_URL;
+        if (!LITELLM_API_KEY || !LITELLM_BASE_URL) {
+            console.log('LITELLM_API_KEY or LITELLM_BASE_URL is not set');
+            return {
+                statusCode: 500,
+                body: JSON.stringify({ error: 'Server configuration error: LITELLM_API_KEY or LITELLM_BASE_URL not set' })
+            };
+        }
+
+        const API_URL = `${LITELLM_BASE_URL}/chat/completions`;
+        try {
+            console.log('Calling LiteLLM API with model:', model);
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${LITELLM_API_KEY}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ model, messages, stream: stream || false, temperature: temperature || 0.3, max_tokens })
+            });
+            console.log('LiteLLM response status:', response.status, 'statusText:', response.statusText);
+
+            if (!response.ok) {
+                let errorData;
+                try {
+                    errorData = await response.json();
+                    console.log('LiteLLM error response:', JSON.stringify(errorData, null, 2));
+                    if (response.status === 429) {
+                        errorData.suggestion = 'LiteLLM rate limit exceeded. Wait a few seconds or check your proxy configuration.';
+                    } else if (response.status === 401) {
+                        errorData.suggestion = 'LiteLLM: Invalid API key. Verify LITELLM_API_KEY in Netlify environment variables.';
+                    } else if (errorData.error?.code === 'model_not_supported') {
+                        errorData.suggestion = 'LiteLLM: The model is not supported. Check your config.yaml or available models.';
+                    }
+                } catch (e) {
+                    const text = await response.text();
+                    console.log('Non-JSON response:', text);
+                    errorData = { error: `HTTP ${response.status}`, details: text };
+                }
+                throw new Error(JSON.stringify(errorData, null, 2));
+            }
+
+            const result = await response.json();
+            console.log('LiteLLM response:', JSON.stringify(result, null, 2));
+            return {
+                statusCode: 200,
+                body: JSON.stringify(result)
+            };
+        } catch (error) {
+            console.error('LiteLLM error:', error.message, error.stack);
+            return {
+                statusCode: 500,
+                body: JSON.stringify({ error: 'Failed to query LiteLLM', details: error.message })
+            };
+        }
+    } 
+    // Fallback 1: Portkey
+    else if (provider === 'portkey') {
         const PORTKEY_API_KEY = process.env.PORTKEY_API_KEY;
         const PORTKEY_VIRTUAL_KEY = process.env.PORTKEY_VIRTUAL_KEY;
         if (!PORTKEY_API_KEY || !PORTKEY_VIRTUAL_KEY) {
@@ -89,7 +149,9 @@ exports.handler = async function (event) {
                 body: JSON.stringify({ error: 'Failed to query Portkey AI', details: error.message })
             };
         }
-    } else if (provider === 'together') {
+    } 
+    // Fallback 2: Together AI
+    else if (provider === 'together') {
         const TOGETHER_API_KEY = process.env.TOGETHER_API_KEY;
         if (!TOGETHER_API_KEY) {
             console.log('TOGETHER_API_KEY is not set');
@@ -148,7 +210,7 @@ exports.handler = async function (event) {
     } else {
         return {
             statusCode: 400,
-            body: JSON.stringify({ error: 'Invalid provider specified. Use "portkey" or "together".' })
+            body: JSON.stringify({ error: 'Invalid provider specified. Use "litellm", "portkey", or "together".' })
         };
     }
 };
