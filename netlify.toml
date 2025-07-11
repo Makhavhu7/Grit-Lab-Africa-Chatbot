@@ -2,8 +2,3 @@
   command = "echo 'No build command needed'"
   publish = "."
   functions = "functions"
-
-[[redirects]]
-  from = "/static/*"
-  to = "/static/:splat"
-  status = 200
