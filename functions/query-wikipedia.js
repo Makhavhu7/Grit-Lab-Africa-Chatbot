@@ -1,4 +1,3 @@
-// functions/query-wikipedia.js
 const fetch = require('node-fetch');
 
 exports.handler = async function (event) {
@@ -55,7 +54,6 @@ exports.handler = async function (event) {
         const pageId = Object.keys(pageData.query.pages)[0];
         let content = pageData.query.pages[pageId].extract || 'No content available.';
         
-        // Combine with context if available
         if (context) {
             content = `From your slides: ${context.substring(0, 200)}...\n\nFrom Wikipedia: ${content}`;
         }
