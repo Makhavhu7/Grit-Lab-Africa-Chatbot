@@ -33,7 +33,8 @@ exports.handler = async function (event) {
 
     try {
         console.log('Querying for:', query);
-        const searchUrl = `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(query)}&format=json&origin=*`;
+        // Search Wikipedia for relevant pages
+        const searchUrl = `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(query)}&format=json&origin=*&srlimit=5`;
         console.log('Search URL:', searchUrl);
         const searchResponse = await fetch(searchUrl);
         if (!searchResponse.ok) {
@@ -42,28 +43,40 @@ exports.handler = async function (event) {
         }
         const searchData = await searchResponse.json();
         console.log('Search response:', JSON.stringify(searchData, null, 2));
-        const page = searchData.query.search[0];
-        if (!page) {
+
+        let content = '';
+        const pages = searchData.query.search;
+        if (!pages || pages.length === 0) {
             return {
                 statusCode: 200,
-                body: JSON.stringify({ content: 'No relevant information found.' })
+                body: JSON.stringify({ content: 'No relevant information found on Wikipedia.' })
             };
         }
 
-        const pageUrl = `https://en.wikipedia.org/w/api.php?action=query&prop=extracts&exintro&explaintext&titles=${encodeURIComponent(page.title)}&format=json&origin=*`;
-        console.log('Page URL:', pageUrl);
-        const pageResponse = await fetch(pageUrl);
-        if (!pageResponse.ok) {
-            const errorText = await pageResponse.text();
-            throw new Error(`Page fetch failed: HTTP ${pageResponse.status}, ${errorText}`);
+        // Fetch full content for the top 3 relevant pages
+        for (let i = 0; i < Math.min(3, pages.length); i++) {
+            const page = pages[i];
+            const pageUrl = `https://en.wikipedia.org/w/api.php?action=query&prop=extracts&exlimit=1&titles=${encodeURIComponent(page.title)}&format=json&origin=*&exsectionformat=plain`;
+            console.log('Page URL:', pageUrl);
+            const pageResponse = await fetch(pageUrl);
+            if (!pageResponse.ok) {
+                console.warn(`Page fetch failed for ${page.title}: HTTP ${pageResponse.status}`);
+                continue;
+            }
+            const pageData = await pageResponse.json();
+            console.log('Page response:', JSON.stringify(pageData, null, 2));
+            const pageId = Object.keys(pageData.query.pages)[0];
+            const pageContent = pageData.query.pages[pageId].extract || 'No content available.';
+            content += `<h3>${page.title}</h3><p>${pageContent}</p>`;
         }
-        const pageData = await pageResponse.json();
-        console.log('Page response:', JSON.stringify(pageData, null, 2));
-        const pageId = Object.keys(pageData.query.pages)[0];
-        let content = pageData.query.pages[pageId].extract || 'No content available.';
-        
+
+        if (!content) {
+            content = 'No relevant content found on Wikipedia.';
+        }
+
+        // Combine PDF context with Wikipedia content
         if (context) {
-            content = `From your slides: ${context.substring(0, 200)}...<br><br>${content}`;
+            content = `From your slides: ${context.substring(0, 500)}...<br><br><h2>Wikipedia Information</h2>${content}`;
         }
 
         console.log('Response:', content.substring(0, 100) + '...');

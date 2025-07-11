@@ -441,384 +441,384 @@
         Loading PDFs, please wait...
     </div>
     <script>
+      lucide.createIcons();
+const pdfFiles = [
+    { id: '1', name: 'ACSSE_IFM02A2_Tut2.pdf', path: '/pdfs/Equations and Inequalities.pdf', pages: 5, size: '45kb', date: '2024-06-01' },
+    { id: '2', name: 'IFM2A_Chapter1.pdf', path: '/pdfs/Mechanical Energy.pdf', pages: 7, size: '45kb', date: '2024-06-02' },
+    { id: '3', name: 'ACSSE_IFM02A2_Chap11.pdf', path: '/pdfs/TRIGONOMETRY.pdf', pages: 7, size: '59kb', date: '2024-06-03' }
+];
+let pdfContent = {};
+let keywordMap = {};
+let selectedSlides = [];
+let pdfThumbnails = {};
+
+async function loadPDFs() {
+    const loadingIndicator = document.getElementById('loadingIndicator');
+    loadingIndicator.classList.add('active');
+    let loadErrors = [];
+
+    // Load cached content from localStorage
+    const cachedContent = localStorage.getItem('pdfContent');
+    const cachedKeywords = localStorage.getItem('keywordMap');
+    if (cachedContent && cachedKeywords) {
+        pdfContent = JSON.parse(cachedContent);
+        keywordMap = JSON.parse(cachedKeywords);
+        console.log('Loaded cached PDF content and keyword map');
+        showTutorialButtons();
+        loadingIndicator.classList.remove('active');
+        return;
+    }
+
+    for (const pdf of pdfFiles) {
+        try {
+            console.log(`Fetching PDF: ${pdf.path}`);
+            const response = await fetch(pdf.path);
+            if (!response.ok) throw new Error(`Failed to fetch ${pdf.name}: ${response.statusText}`);
+            const arrayBuffer = await response.arrayBuffer();
+            const typedArray = new Uint8Array(arrayBuffer);
+            const pdfDoc = await pdfjsLib.getDocument(typedArray).promise;
+            pdfContent[pdf.id] = [];
+            keywordMap[pdf.id] = {};
+            pdfThumbnails[pdf.id] = [];
+
+            // Generate thumbnail for first page
+            const page = await pdfDoc.getPage(1);
+            const viewport = page.getViewport({ scale: 0.5 });
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            canvas.height = viewport.height;
+            canvas.width = viewport.width;
+            await page.render({ canvasContext: context, viewport }).promise;
+            pdfThumbnails[pdf.id][1] = canvas.toDataURL('image/png');
+
+            // Initialize content for all pages
+            for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++) {
+                pdfContent[pdf.id].push({ page: pageNum, text: null });
+            }
+            pdf.pages = pdfDoc.numPages;
+            console.log(`Loaded thumbnail for ${pdf.name}, ${pdf.pages} pages`);
+        } catch (error) {
+            console.error(`Error loading ${pdf.name}:`, error);
+            loadErrors.push(pdf.name);
+        }
+    }
+
+    if (loadErrors.length > 0) {
+        alert(`Failed to load PDFs: ${loadErrors.join(', ')}. Please check the files and try again.`);
+    } else {
+        console.log('All PDFs processed');
+        localStorage.setItem('pdfContent', JSON.stringify(pdfContent));
+        localStorage.setItem('keywordMap', JSON.stringify(keywordMap));
+        showTutorialButtons();
+    }
+    loadingIndicator.classList.remove('active');
+}
+
+async function processPageOCR(pdfId, pageNum) {
+    if (pdfContent[pdfId][pageNum - 1].text) {
+        console.log(`Using cached OCR for ${pdfFiles.find(p => p.id === pdfId).name}, page ${pageNum}`);
+        return;
+    }
+    const loadingIndicator = document.getElementById('loadingIndicator');
+    loadingIndicator.textContent = `Processing OCR for ${pdfFiles.find(p => p.id === pdfId).name}, page ${pageNum}...`;
+    loadingIndicator.classList.add('active');
+    try {
+        const response = await fetch(pdfFiles.find(p => pទs.id === pdfId).path);
+        if (!response.ok) throw new Error(`Failed to fetch PDF`);
+        const arrayBuffer = await response.arrayBuffer();
+        const typedArray = new Uint8Array(arrayBuffer);
+        const pdfDoc = await pdfjsLib.getDocument(typedArray).promise;
+        const page = await pdfDoc.getPage(pageNum);
+        const viewport = page.getViewport({ scale: 1.0 });
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+        canvas.height = viewport.height;
+        canvas.width = viewport.width;
+        await page.render({ canvasContext: context, viewport }).promise;
+        const imageData = canvas.toDataURL('image/png');
+        const { data: { text } } = await Tesseract.recognize(imageData, 'eng', {
+            logger: m => console.log(`OCR progressீfor page ${pageNum}: ${Math.round(m.progress * 100)}%`)
+        });
+        pdfContent[pdfId][pageNum - 1].text = text;
+        const words = text.toLowerCase().split(/\s+/).filter(word => word.length > 3);
+        words.forEach(word => {
+            if (!keywordMap[pdfId][word]) {
+                keywordMap[pdfId][word] = [];
+            }
+            keywordMap[pdfId][word].push(pageNum);
+        });
+        console.log(`OCR completed for ${pdfFiles.find(p => p.id === pdfId).name}, page ${pageNum}`);
+        localStorage.setItem('pdfContent', JSON.stringify(pdfContent));
+        localStorage.setItem('keywordMap', JSON.stringify(keywordMap));
+    } catch (error) {
+        console.error(`OCR error for ${pdfFiles.find(p => p.id === pdfId).name}, page ${pageNum}:`, error);
+        alert(`Failed to process OCR for page ${pageNum}. Please try again.`);
+    }
+    loadingIndicator.classList.remove('active');
+}
+
+function showTutorialButtons() {
+    const messagesContainer = document.querySelector('.chat-messages');
+    const tutButtonsContainer = document.querySelector('.tut-buttons');
+    tutButtonsContainer.innerHTML = '';
+    pdfFiles.forEach(pdf => {
+        const button = document.createElement('button');
+        button.textContent = pdf.name.replace('.pdf', '');
+        button.onclick = () => selectTutorial(pdf.id);
+        tutButtonsContainer.appendChild(button);
+    });
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    lucide.createIcons();
+}
+
+async function selectTutorial(id) {
+    const messagesContainer = document.querySelector('.chat-messages');
+    selectedSlides = [id];
+    const pdf = pdfFiles.find(p => p.id === id);
+    const botMessage = document.createElement('div');
+    botMessage.className = 'message bot';
+    botMessage.innerHTML = `
+        <div class="avatar"><i data-lucide="bot" class="h-4 w-4"></i></div>
+        <div class="message-content">
+            <p>Great! You've selected <strong>${pdf.name.replace('.pdf', '')}</strong>. Ask me anything about this tutorial!</p>
+            <div class="meta">
+                <span>${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                <div class="actions">
+                    <button onclick="handleReaction('temp', 'like')"><i data-lucide="thumbs-up" class="h-3 w-3"></i></button>
+                    <button onclick="handleReaction('temp', 'dislike')"><i data-lucide="thumbs-down" class="h-3 w-3"></i></button>
+                    <button onclick="regenerateResponse('temp')"><i data-lucide="rotate-ccw" class="h-3 w-3"></i></button>
+                    <button onclick="copyMessage('Great! You\'ve selected ${pdf.name.replace('.pdf', '')}. Ask me anything about this tutorial!')"><i data-lucide="copy" class="h-3 w-3"></i></button>
+                </div>
+            </div>
+        </div>
+    `;
+    messagesContainer.appendChild(botMessage);
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    // Process OCR for all pages of selected PDF
+    for (let pageNum = 1; pageNum <= pdf.pages; pageNum++) {
+        if (!pdfContent[id][pageNum - 1].text) {
+            await processPageOCR(id, pageNum);
+        }
+    }
+    lucide.createIcons();
+}
+
+function enhanceResponse(text, query) {
+    let enhanced = text; // Remove 500-character limit
+    if (query.toLowerCase().includes('explain simply')) {
+        enhanced = `
+            <div class="section-title">Simplified Explanation</div>
+            <div class="section-content">${enhanced.substring(0, 1000)}...</div>
+            <div class="section-title">Key Points</div>
+            <ul>
+                ${enhanced.split('. ').slice(0, 3).map(sentence => `<li>${sentence}.</li>`).join('')}
+                <li>See slide for more details.</li>
+            </ul>
+        `;
+    } else if (query.toLowerCase().includes('practice questions')) {
+        const keyTerms = enhanced.split(' ').filter(word => word.length > 4).slice(0, 3);
+        enhanced = `
+            <div class="section-title">Practice Questions</div>
+            <ul>
+                <li>What is ${keyTerms[0] || 'the concept'}?</li>
+                <li>How does ${keyTerms[1] || 'it'} relate to ${keyTerms[2] || 'the topic'}?</li>
+                <li>Explain the significance of ${keyTerms[0] || 'the concept'} in context.</li>
+            </ul>
+            <div class="section-title">Source</div>
+            <div class="section-content">${enhanced.substring(0, 1000)}...</div>
+        `;
+    } else if (query.toLowerCase().includes('summarize')) {
+        enhanced = `
+            <div class="section-title">Summary</div>
+            <ul>
+                ${enhanced.split('. ').slice(0, 5).map(sentence => `<li>${sentence}.</li>`).join('')}
+            </ul>
+        `;
+    } else if (query.toLowerCase().includes('examples')) {
+        enhanced = `
+            <div class="section-title">Examples</div>
+            <div class="section-content">${enhanced.substring(0, 1000)}...</div>
+            <div class="section-content">Example: Imagine ${enhanced.split('. ')[0]} applied in a real-world scenario.</div>
+        `;
+    } else {
+        enhanced = `<div class="section-content">${enhanced}</div>`;
+    }
+    enhanced = enhanced.replace(new RegExp(`(${query.split(' ').join('|')})`, 'gi'), '<strong>$1</strong>');
+    return enhanced;
+}
+
+async function handleSendMessage(event) {
+    event.preventDefault();
+    const input = document.getElementById('chatInput');
+    const message = input.value.trim();
+    if (!message) return;
+    if (selectedSlides.length === 0) {
+        const messagesContainer = document.querySelector('.chat-messages');
+        const botMessage = document.createElement('div');
+        botMessage.className = 'message bot';
+        botMessage.innerHTML = `
+            <div class="avatar"><i data-lucide="bot" class="h-4 w-4"></i></div>
+            <div class="message-content">
+                <p>Please select a tutorial first.</p>
+                <div class="tut-buttons">
+                    ${pdfFiles.map(pdf => `<button onclick="selectTutorial('${pdf.id}')">${pdf.name.replace('.pdf', '')}</button>`).join('')}
+                </div>
+                <div class="meta">
+                    <span>${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                    <div class="actions">
+                        <button onclick="handleReaction('temp', 'like')"><i data-lucide="thumbs-up" class="h-3 w-3"></i></button>
+                        <button onclick="handleReaction('temp', 'dislike')"><i data-lucide="thumbs-down" class="h-3 w-3"></i></button>
+                        <button onclick="regenerateResponse('temp')"><i data-lucide="rotate-ccw" class="h-3 w-3"></i></button>
+                        <button onclick="copyMessage('Please select a tutorial first.')"><i data-lucide="copy" class="h-3 w-3"></i></button>
+                    </div>
+                </div>
+            </div>
+        `;
+        messagesContainer.appendChild(botMessage);
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
         lucide.createIcons();
-        const pdfFiles = [
-            { id: '1', name: 'ACSSE_IFM02A2_Tut2.pdf', path: '/pdfs/Equations and Inequalities.pdf', pages: 5, size: '45kb', date: '2024-06-01' },
-            { id: '2', name: 'IFM2A_Chapter1.pdf', path: '/pdfs/Mechanical Energy.pdf', pages: 7, size: '45kb', date: '2024-06-02' },
-            { id: '3', name: 'ACSSE_IFM02A2_Chap11.pdf', path: '/pdfs/TRIGONOMETRY.pdf', pages: 7, size: '59kb', date: '2024-06-03' }
-        ];
-        let pdfContent = {};
-        let keywordMap = {};
-        let selectedSlides = [];
-        let pdfThumbnails = {};
+        return;
+    }
+    const messagesContainer = document.querySelector('.chat-messages');
+    const userMessage = document.createElement('div');
+    userMessage.className = 'message user';
+    userMessage.innerHTML = `
+        <div class="message-content">
+            <p>${message}</p>
+            <div class="meta">
+                <span>${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                <div class="actions">
+                    <button onclick="copyMessage('${message}')"><i data-lucide="copy" class="h-3 w-3"></i></button>
+                </div>
+            </div>
+        </div>
+        <div class="avatar"><i data-lucide="user" class="h-4 w-4"></i></div>
+    `;
+    messagesContainer.appendChild(userMessage);
+    input.value = '';
+    const typingIndicator = document.createElement('div');
+    typingIndicator.className = 'message bot typing-indicator';
+    typingIndicator.innerHTML = `
+        <div class="avatar"><i data-lucide="bot" class="h-4 w-4"></i></div>
+        <div class="flex space-x-1">
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+        </div>
+    `;
+    messagesContainer.appendChild(typingIndicator);
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
 
-        async function loadPDFs() {
-            const loadingIndicator = document.getElementById('loadingIndicator');
-            loadingIndicator.classList.add('active');
-            let loadErrors = [];
-            
-            // Load cached content from localStorage
-            const cachedContent = localStorage.getItem('pdfContent');
-            const cachedKeywords = localStorage.getItem('keywordMap');
-            if (cachedContent && cachedKeywords) {
-                pdfContent = JSON.parse(cachedContent);
-                keywordMap = JSON.parse(cachedKeywords);
-                console.log('Loaded cached PDF content and keyword map');
-                showTutorialButtons();
-                loadingIndicator.classList.remove('active');
-                return;
+    let context = '';
+    let relevantPages = [];
+    let pdfName = '';
+    const selectedId = selectedSlides[0];
+    const selectedPdf = pdfContent[selectedId];
+    if (selectedPdf && selectedPdf.length > 0) {
+        const queryWords = message.toLowerCase().split(/\s+/);
+        // Ensure OCR is done for all pages
+        for (let pageNum = 1; pageNum <= selectedPdf.length; pageNum++) {
+            if (!pdfContent[selectedId][pageNum - 1].text) {
+                await processPageOCR(selectedId, pageNum);
             }
-
-            for (const pdf of pdfFiles) {
-                try {
-                    console.log(`Fetching PDF: ${pdf.path}`);
-                    const response = await fetch(pdf.path);
-                    if (!response.ok) throw new Error(`Failed to fetch ${pdf.name}: ${response.statusText}`);
-                    const arrayBuffer = await response.arrayBuffer();
-                    const typedArray = new Uint8Array(arrayBuffer);
-                    const pdfDoc = await pdfjsLib.getDocument(typedArray).promise;
-                    pdfContent[pdf.id] = [];
-                    keywordMap[pdf.id] = {};
-                    pdfThumbnails[pdf.id] = [];
-
-                    // Generate thumbnail for first page only
-                    const page = await pdfDoc.getPage(1);
-                    const viewport = page.getViewport({ scale: 0.5 });
-                    const canvas = document.createElement('canvas');
-                    const context = canvas.getContext('2d');
-                    canvas.height = viewport.height;
-                    canvas.width = viewport.width;
-                    await page.render({ canvasContext: context, viewport }).promise;
-                    pdfThumbnails[pdf.id][1] = canvas.toDataURL('image/png');
-
-                    // Initialize empty content for all pages
-                    for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++) {
-                        pdfContent[pdf.id].push({ page: pageNum, text: null });
-                    }
-                    pdf.pages = pdfDoc.numPages;
-                    console.log(`Loaded thumbnail for ${pdf.name}, ${pdf.pages} pages`);
-                } catch (error) {
-                    console.error(`Error loading ${pdf.name}:`, error);
-                    loadErrors.push(pdf.name);
-                }
-            }
-
-            if (loadErrors.length > 0) {
-                alert(`Failed to load PDFs: ${loadErrors.join(', ')}. Please check the files and try again.`);
-            } else {
-                console.log('All PDFs processed');
-                console.log('pdfContent:', pdfContent);
-                console.log('keywordMap:', keywordMap);
-                localStorage.setItem('pdfContent', JSON.stringify(pdfContent));
-                localStorage.setItem('keywordMap', JSON.stringify(keywordMap));
-                showTutorialButtons();
-            }
-            loadingIndicator.classList.remove('active');
         }
-
-        async function processPageOCR(pdfId, pageNum) {
-            if (pdfContent[pdfId][pageNum - 1].text) {
-                console.log(`Using cached OCR for ${pdfFiles.find(p => p.id === pdfId).name}, page ${pageNum}`);
-                return;
+        // Collect content from all relevant pages
+        for (const page of selectedPdf) {
+            if (page.text && queryWords.some(word => keywordMap[selectedId][word]?.includes(page.page))) {
+                context += page.text + '\n';
+                relevantPages.push(page.page);
             }
-            const loadingIndicator = document.getElementById('loadingIndicator');
-            loadingIndicator.textContent = `Processing OCR for ${pdfFiles.find(p => p.id === pdfId).name}, page ${pageNum}...`;
-            loadingIndicator.classList.add('active');
-            try {
-                const response = await fetch(pdfFiles.find(p => p.id === pdfId).path);
-                if (!response.ok) throw new Error(`Failed to fetch PDF`);
-                const arrayBuffer = await response.arrayBuffer();
-                const typedArray = new Uint8Array(arrayBuffer);
-                const pdfDoc = await pdfjsLib.getDocument(typedArray).promise;
-                const page = await pdfDoc.getPage(pageNum);
-                const viewport = page.getViewport({ scale: 1.0 });
-                const canvas = document.createElement('canvas');
-                const context = canvas.getContext('2d');
-                canvas.height = viewport.height;
-                canvas.width = viewport.width;
-                await page.render({ canvasContext: context, viewport }).promise;
-                const imageData = canvas.toDataURL('image/png');
-                const { data: { text } } = await Tesseract.recognize(imageData, 'eng', {
-                    logger: m => console.log(`OCR progress for page ${pageNum}: ${Math.round(m.progress * 100)}%`)
-                });
-                pdfContent[pdfId][pageNum - 1].text = text;
-                const words = text.toLowerCase().split(/\s+/).filter(word => word.length > 3);
-                words.forEach(word => {
-                    if (!keywordMap[pdfId][word]) {
-                        keywordMap[pdfId][word] = [];
-                    }
-                    keywordMap[pdfId][word].push(pageNum);
-                });
-                console.log(`OCR completed for ${pdfFiles.find(p => p.id === pdfId).name}, page ${pageNum}`);
-                localStorage.setItem('pdfContent', JSON.stringify(pdfContent));
-                localStorage.setItem('keywordMap', JSON.stringify(keywordMap));
-            } catch (error) {
-                console.error(`OCR error for ${pdfFiles.find(p => p.id === pdfId).name}, page ${pageNum}:`, error);
-                alert(`Failed to process OCR for page ${pageNum}. Please try again.`);
-            }
-            loadingIndicator.classList.remove('active');
         }
-
-        function showTutorialButtons() {
-            const messagesContainer = document.querySelector('.chat-messages');
-            const tutButtonsContainer = document.querySelector('.tut-buttons');
-            tutButtonsContainer.innerHTML = '';
-            pdfFiles.forEach(pdf => {
-                const button = document.createElement('button');
-                button.textContent = pdf.name.replace('.pdf', '');
-                button.onclick = () => selectTutorial(pdf.id);
-                tutButtonsContainer.appendChild(button);
-            });
-            messagesContainer.scrollTop = messagesContainer.scrollHeight;
-            lucide.createIcons();
+        if (!context) {
+            context = selectedPdf[0].text || '';
+            relevantPages.push(1);
         }
+        pdfName = pdfFiles.find(pdf => pdf.id === selectedId).name;
+    } else {
+        console.log('No content for selected PDF:', selectedId);
+        alert('Selected tutorial content not loaded. Please try again.');
+        messagesContainer.removeChild(typingIndicator);
+        return;
+    }
 
-        async function selectTutorial(id) {
-            const messagesContainer = document.querySelector('.chat-messages');
-            selectedSlides = [id];
-            const pdf = pdfFiles.find(p => p.id === id);
-            const botMessage = document.createElement('div');
-            botMessage.className = 'message bot';
-            botMessage.innerHTML = `
-                <div class="avatar"><i data-lucide="bot" class="h-4 w-4"></i></div>
-                <div class="message-content">
-                    <p>Great! You've selected <strong>${pdf.name.replace('.pdf', '')}</strong>. Ask me anything about this tutorial!</p>
-                    <div class="meta">
-                        <span>${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                        <div class="actions">
-                            <button onclick="handleReaction('temp', 'like')"><i data-lucide="thumbs-up" class="h-3 w-3"></i></button>
-                            <button onclick="handleReaction('temp', 'dislike')"><i data-lucide="thumbs-down" class="h-3 w-3"></i></button>
-                            <button onclick="regenerateResponse('temp')"><i data-lucide="rotate-ccw" class="h-3 w-3"></i></button>
-                            <button onclick="copyMessage('Great! You\'ve selected ${pdf.name.replace('.pdf', '')}. Ask me anything about this tutorial!')"><i data-lucide="copy" class="h-3 w-3"></i></button>
-                        </div>
+    try {
+        console.log('Sending query to server:', message);
+        const response = await fetch('/.netlify/functions/query-wikipedia', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ query: message, context })
+        });
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Server query failed: HTTP ${response.status}, ${errorText}`);
+        }
+        const result = await response.json();
+        let answer = result.content || 'Sorry, I couldn’t find relevant information.';
+        answer = enhanceResponse(answer, message);
+        const botMessage = document.createElement('div');
+        botMessage.className = 'message bot';
+        botMessage.innerHTML = `
+            <div class="avatar"><i data-lucide="bot" class="h-4 w-4"></i></div>
+            <div class="message-content">
+                <p>${answer}<br><br><em>Source: ${pdfName.replace('.pdf', '')}, page${relevantPages.length > 1 ? 's' : ''} ${relevantPages.join(', ')}</em></p>
+                <div class="meta">
+                    <span>${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                    <div class="actions">
+                        <button onclick="handleReaction('temp', 'like')"><i data-lucide="thumbs-up" class="h-3 w-3"></i></button>
+                        <button onclick="handleReaction('temp', 'dislike')"><i data-lucide="thumbs-down" class="h-3 w-3"></i></button>
+                        <button onclick="regenerateResponse('temp')"><i data-lucide="rotate-ccw" class="h-3 w-3"></i></button>
+                        <button onclick="copyMessage('${answer}')"><i data-lucide="copy" class="h-3 w-3"></i></button>
                     </div>
                 </div>
-            `;
-            messagesContainer.appendChild(botMessage);
-            messagesContainer.scrollTop = messagesContainer.scrollHeight;
-            // Process OCR for all pages of selected PDF
-            for (let pageNum = 1; pageNum <= pdf.pages; pageNum++) {
-                if (!pdfContent[id][pageNum - 1].text) {
-                    await processPageOCR(id, pageNum);
-                }
-            }
-            lucide.createIcons();
-        }
+            </div>
+        `;
+        messagesContainer.removeChild(typingIndicator);
+        messagesContainer.appendChild(botMessage);
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        lucide.createIcons();
+    } catch (error) {
+        console.error('Server query error:', error.message);
+        alert(`Error querying server: ${error.message}. Please try again.`);
+        messagesContainer.removeChild(typingIndicator);
+    }
+}
 
-        function enhanceResponse(text, query) {
-            let enhanced = text.substring(0, 500);
-            if (query.toLowerCase().includes('explain simply')) {
-                enhanced = `
-                    <div class="section-title">Simplified Explanation</div>
-                    <div class="section-content">${enhanced}</div>
-                    <div class="section-title">Key Points</div>
-                    <ul>
-                        <li>${enhanced.split('. ')[0]}.</li>
-                        <li>See slide for more details.</li>
-                    </ul>
-                `;
-            } else if (query.toLowerCase().includes('practice questions')) {
-                const keyTerms = enhanced.split(' ').filter(word => word.length > 4).slice(0, 2);
-                enhanced = `
-                    <div class="section-title">Practice Questions</div>
-                    <ul>
-                        <li>What is ${keyTerms[0] || 'the concept'}?</li>
-                        <li>How does ${keyTerms[1] || 'it'} relate to the topic?</li>
-                    </ul>
-                    <div class="section-title">Source</div>
-                    <div class="section-content">${enhanced}</div>
-                `;
-            } else if (query.toLowerCase().includes('summarize')) {
-                enhanced = `
-                    <div class="section-title">Summary</div>
-                    <ul>
-                        <li>${enhanced.split('. ')[0]}.</li>
-                        <li>${enhanced.split('. ')[1] || 'See slide.'}</li>
-                    </ul>
-                `;
-            } else if (query.toLowerCase().includes('examples')) {
-                enhanced = `
-                    <div class="section-title">Example</div>
-                    <div class="section-content">${enhanced}</div>
-                    <div class="section-content">Imagine ${enhanced.split('. ')[0]} in a real-world scenario.</div>
-                `;
-            } else {
-                enhanced = `<div class="section-content">${enhanced}</div>`;
-            }
-            enhanced = enhanced.replace(new RegExp(`(${query.split(' ').join('|')})`, 'gi'), '<strong>$1</strong>');
-            return enhanced;
-        }
+function handleKeyPress(event) {
+    if (event.key === 'Enter' && !event.shiftKey) {
+        event.preventDefault();
+        handleSendMessage(event);
+    }
+}
 
-        async function handleSendMessage(event) {
-            event.preventDefault();
-            const input = document.getElementById('chatInput');
-            const message = input.value.trim();
-            if (!message) return;
-            if (selectedSlides.length === 0) {
-                const messagesContainer = document.querySelector('.chat-messages');
-                const botMessage = document.createElement('div');
-                botMessage.className = 'message bot';
-                botMessage.innerHTML = `
-                    <div class="avatar"><i data-lucide="bot" class="h-4 w-4"></i></div>
-                    <div class="message-content">
-                        <p>Please select a tutorial first.</p>
-                        <div class="tut-buttons">
-                            ${pdfFiles.map(pdf => `<button onclick="selectTutorial('${pdf.id}')">${pdf.name.replace('.pdf', '')}</button>`).join('')}
-                        </div>
-                        <div class="meta">
-                            <span>${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                            <div class="actions">
-                                <button onclick="handleReaction('temp', 'like')"><i data-lucide="thumbs-up" class="h-3 w-3"></i></button>
-                                <button onclick="handleReaction('temp', 'dislike')"><i data-lucide="thumbs-down" class="h-3 w-3"></i></button>
-                                <button onclick="regenerateResponse('temp')"><i data-lucide="rotate-ccw" class="h-3 w-3"></i></button>
-                                <button onclick="copyMessage('Please select a tutorial first.')"><i data-lucide="copy" class="h-3 w-3"></i></button>
-                            </div>
-                        </div>
-                    </div>
-                `;
-                messagesContainer.appendChild(botMessage);
-                messagesContainer.scrollTop = messagesContainer.scrollHeight;
-                lucide.createIcons();
-                return;
-            }
-            const messagesContainer = document.querySelector('.chat-messages');
-            const userMessage = document.createElement('div');
-            userMessage.className = 'message user';
-            userMessage.innerHTML = `
-                <div class="message-content">
-                    <p>${message}</p>
-                    <div class="meta">
-                        <span>${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                        <div class="actions">
-                            <button onclick="copyMessage('${message}')"><i data-lucide="copy" class="h-3 w-3"></i></button>
-                        </div>
-                    </div>
-                </div>
-                <div class="avatar"><i data-lucide="user" class="h-4 w-4"></i></div>
-            `;
-            messagesContainer.appendChild(userMessage);
-            input.value = '';
-            const typingIndicator = document.createElement('div');
-            typingIndicator.className = 'message bot typing-indicator';
-            typingIndicator.innerHTML = `
-                <div class="avatar"><i data-lucide="bot" class="h-4 w-4"></i></div>
-                <div class="flex space-x-1">
-                    <div class="dot"></div>
-                    <div class="dot"></div>
-                    <div class="dot"></div>
-                </div>
-            `;
-            messagesContainer.appendChild(typingIndicator);
-            messagesContainer.scrollTop = messagesContainer.scrollHeight;
-            let context = '';
-            let relevantPage = 1;
-            let pdfName = '';
-            const selectedId = selectedSlides[0];
-            const selectedPdf = pdfContent[selectedId];
-            if (selectedPdf && selectedPdf.length > 0) {
-                const queryWords = message.toLowerCase().split(/\s+/);
-                // Ensure OCR is done for all pages
-                for (let pageNum = 1; pageNum <= selectedPdf.length; pageNum++) {
-                    if (!pdfContent[selectedId][pageNum - 1].text) {
-                        await processPageOCR(selectedId, pageNum);
-                    }
-                }
-                for (const page of selectedPdf) {
-                    if (page.text && queryWords.some(word => keywordMap[selectedId][word]?.includes(page.page))) {
-                        context = page.text.substring(0, 1000);
-                        relevantPage = page.page;
-                        pdfName = pdfFiles.find(pdf => pdf.id === selectedId).name;
-                        break;
-                    }
-                }
-                if (!context) {
-                    context = selectedPdf[0].text?.substring(0, 1000) || '';
-                    pdfName = pdfFiles.find(pdf => pdf.id === selectedId).name;
-                }
-            } else {
-                console.log('No content for selected PDF:', selectedId);
-                alert('Selected tutorial content not loaded. Please try again.');
-                messagesContainer.removeChild(typingIndicator);
-                return;
-            }
-            try {
-                console.log('Sending query to server:', message);
-                const response = await fetch('/.netlify/functions/query-wikipedia', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ query: message, context })
-                });
-                if (!response.ok) {
-                    const errorText = await response.text();
-                    throw new Error(`Server query failed: HTTP ${response.status}, ${errorText}`);
-                }
-                const result = await response.json();
-                let answer = result.content || 'Sorry, I couldn’t find relevant information.';
-                answer = enhanceResponse(answer, message);
-                const botMessage = document.createElement('div');
-                botMessage.className = 'message bot';
-                botMessage.innerHTML = `
-                    <div class="avatar"><i data-lucide="bot" class="h-4 w-4"></i></div>
-                    <div class="message-content">
-                        <p>${answer}<br><br><em>Source: ${pdfName.replace('.pdf', '')}, slide ${relevantPage}</em></p>
-                        <div class="meta">
-                            <span>${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                            <div class="actions">
-                                <button onclick="handleReaction('temp', 'like')"><i data-lucide="thumbs-up" class="h-3 w-3"></i></button>
-                                <button onclick="handleReaction('temp', 'dislike')"><i data-lucide="thumbs-down" class="h-3 w-3"></i></button>
-                                <button onclick="regenerateResponse('temp')"><i data-lucide="rotate-ccw" class="h-3 w-3"></i></button>
-                                <button onclick="copyMessage('${answer}')"><i data-lucide="copy" class="h-3 w-3"></i></button>
-                            </div>
-                        </div>
-                    </div>
-                `;
-                messagesContainer.removeChild(typingIndicator);
-                messagesContainer.appendChild(botMessage);
-                messagesContainer.scrollTop = messagesContainer.scrollHeight;
-                lucide.createIcons();
-            } catch (error) {
-                console.error('Server query error:', error.message);
-                alert(`Error querying server: ${error.message}. Please try again.`);
-                messagesContainer.removeChild(typingIndicator);
-            }
-        }
+function setInput(text) {
+    document.getElementById('chatInput').value = text;
+}
 
-        function handleKeyPress(event) {
-            if (event.key === 'Enter' && !event.shiftKey) {
-                event.preventDefault();
-                handleSendMessage(event);
-            }
-        }
+function copyMessage(content) {
+    navigator.clipboard.writeText(content);
+    alert('Message copied to clipboard!');
+}
 
-        function setInput(text) {
-            document.getElementById('chatInput').value = text;
-        }
+function handleReaction(id, reaction) {
+    const button = event.target.closest('button');
+    if (reaction === 'like') {
+        button.style.color = button.style.color === 'rgb(74, 222, 128)' ? '' : '#4ade80';
+    } else {
+        button.style.color = button.style.color === 'rgb(248, 113, 113)' ? '' : '#f87171';
+    }
+    alert(reaction === 'like' ? 'Thanks for the feedback!' : 'Feedback received');
+}
 
-        function copyMessage(content) {
-            navigator.clipboard.writeText(content);
-            alert('Message copied to clipboard!');
-        }
+function regenerateResponse(id) {
+    alert('Regenerating response...');
+    const input = document.getElementById('chatInput');
+    input.value = document.querySelector(`.message[data-id="${id}"] .message-content p`)?.textContent || '';
+    handleSendMessage(new Event('submit'));
+}
 
-        function handleReaction(id, reaction) {
-            const button = event.target.closest('button');
-            if (reaction === 'like') {
-                button.style.color = button.style.color === 'rgb(74, 222, 128)' ? '' : '#4ade80';
-            } else {
-                button.style.color = button.style.color === 'rgb(248, 113, 113)' ? '' : '#f87171';
-            }
-            alert(reaction === 'like' ? 'Thanks for the feedback!' : 'Feedback received');
-        }
-
-        function regenerateResponse(id) {
-            alert('Regenerating response...');
-            const input = document.getElementById('chatInput');
-            input.value = document.querySelector(`.message[data-id="${id}"] .message-content p`)?.textContent || '';
-            handleSendMessage(new Event('submit'));
-        }
-
-        window.onload = function () {
-            loadPDFs();
-        };
+window.onload = function () {
+    loadPDFs();
+};
     </script>
 </body>
 </html>
