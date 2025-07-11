@@ -471,17 +471,6 @@
             loadingIndicator.classList.add('active');
             let loadErrors = [];
 
-            const cachedContent = localStorage.getItem('pdfContent');
-            const cachedKeywords = localStorage.getItem('keywordMap');
-            if (cachedContent && cachedKeywords) {
-                pdfContent = JSON.parse(cachedContent);
-                keywordMap = JSON.parse(cachedKeywords);
-                console.log('Loaded cached PDF content and keyword map');
-                showTutorialButtons();
-                loadingIndicator.classList.remove('active');
-                return;
-            }
-
             for (const pdf of pdfFiles) {
                 try {
                     console.log(`Fetching PDF: ${pdf.path}`);
@@ -518,18 +507,12 @@
                 alert(`Failed to load PDFs: ${loadErrors.join(', ')}. Please check the files and try again.`);
             } else {
                 console.log('All PDFs processed');
-                localStorage.setItem('pdfContent', JSON.stringify(pdfContent));
-                localStorage.setItem('keywordMap', JSON.stringify(keywordMap));
                 showTutorialButtons();
             }
             loadingIndicator.classList.remove('active');
         }
 
         async function processPageOCR(pdfId, pageNum) {
-            if (pdfContent[pdfId][pageNum - 1].text) {
-                console.log(`Using cached OCR for ${pdfFiles.find(p => p.id === pdfId).name}, page ${pageNum}`);
-                return;
-            }
             const loadingIndicator = document.getElementById('loadingIndicator');
             loadingIndicator.textContent = `Processing OCR for ${pdfFiles.find(p => p.id === pdfId).name}, page ${pageNum}...`;
             loadingIndicator.classList.add('active');
@@ -559,8 +542,6 @@
                     keywordMap[pdfId][word].push(pageNum);
                 });
                 console.log(`OCR completed for ${pdfFiles.find(p => p.id === pdfId).name}, page ${pageNum}`);
-                localStorage.setItem('pdfContent', JSON.stringify(pdfContent));
-                localStorage.setItem('keywordMap', JSON.stringify(keywordMap));
             } catch (error) {
                 console.error(`OCR error for ${pdfFiles.find(p => p.id === pdfId).name}, page ${pageNum}:`, error);
                 alert(`Failed to process OCR for page ${pageNum}. Please try again.`);
@@ -606,9 +587,7 @@
             messagesContainer.appendChild(botMessage);
             messagesContainer.scrollTop = messagesContainer.scrollHeight;
             for (let pageNum = 1; pageNum <= pdf.pages; pageNum++) {
-                if (!pdfContent[id][pageNum - 1].text) {
-                    await processPageOCR(id, pageNum);
-                }
+                await processPageOCR(id, pageNum);
             }
             lucide.createIcons();
         }
