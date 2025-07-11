@@ -6,13 +6,9 @@
     <title>Grit Lab - Chat with Slides</title>
     <meta name="description" content="Chat with your study slides using StudyFlow">
     <meta name="author" content="StudyFlow">
-    <!-- Lucide Icons CDN -->
     <script src="https://cdn.jsdelivr.net/npm/lucide@0.441.0/dist/umd/lucide.min.js"></script>
-    <!-- PDF.js CDN -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-    <!-- Tesseract.js CDN -->
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.0/dist/tesseract.min.js"></script>
-    <!-- Math.js CDN -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/12.0.0/math.min.js"></script>
     <script>
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
@@ -458,11 +454,11 @@
         lucide.createIcons();
         const pdfFiles = [
             { id: '1', name: 'JBS_GL_TUT_1.pdf', path: '/pdfs/JBS_GL_TUT_1.pdf', pages: 3, size: '1490kb', date: '2025-07-11' },
-            { id: '2', name: 'JBS_GL_TUT_2.pdf', path: '/pdfs/JBS_GL_TUT_2.pdf', pages: 5, size: '1412kb', date: '2025-07-11' },
-            { id: '3', name: 'JBS_GL_TUT_3.pdf', path: '/pdfs/JBS_GL_TUT_3.pdf', pages: 5, size: '1353kb', date: '2025-07-11' }
+            { id: '2', name: 'JBS_GL_TUT_2.pdf', path: '/pdfs/JBS_GL_TUT_2.pdf', pages: 9, size: '1412kb', date: '2025-07-11' },
+            { id: '3', name: 'JBS_GL_TUT_3.pdf', path: '/pdfs/JBS_GL_TUT_3.pdf', pages: 2, size: '1353kb', date: '2025-07-11' }
         ];
         const questionAnswers = {
-            '1': { // JBS_GL_TUT_1.pdf
+            '1': {
                 'Differentiate between the Syntax and the Semantics of an algorithm': {
                     answer: `
                         <div class="section-content">
@@ -485,7 +481,6 @@
         let selectedSlides = [];
         let pdfThumbnails = {};
 
-        // Simple fuzzy matching function using token overlap
         function fuzzyMatch(query, question) {
             const cleanQuery = query.toLowerCase().replace(/[^\w\s]/g, '').split(/\s+/).filter(w => w.length > 2);
             const cleanQuestion = question.toLowerCase().replace(/[^\w\s]/g, '').split(/\s+/).filter(w => w.length > 2);
@@ -524,7 +519,7 @@
                     for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++) {
                         pdfContent[pdf.id].push({ page: pageNum, text: null });
                     }
-                    pdf.pages = pdfDoc.numPages;
+                    pdf.pages = pdfDoc.numPages; // Update page count
                     console.log(`Loaded thumbnail for ${pdf.name}, ${pdf.pages} pages`);
                 } catch (error) {
                     console.error(`Error loading ${pdf.name}:`, error);
@@ -562,7 +557,7 @@
                 const { data: { text } } = await Tesseract.recognize(imageData, 'eng', {
                     logger: m => console.log(`OCR progress for page ${pageNum}: ${Math.round(m.progress * 100)}%`)
                 });
-                pdfContent[pdfId][pageNum - 1].text = text;
+                pdfContent[pdfId][pageNum - 1].text = text || '';
                 const words = text.toLowerCase().split(/\s+/).filter(word => word.length > 2);
                 words.forEach(word => {
                     if (!keywordMap[pdfId][word]) {
@@ -573,8 +568,7 @@
                     }
                 });
 
-                // Extract questions from Section A (assuming numbered list format)
-                if (pdfId === '1' && pageNum === 1) { // JBS_GL_TUT_1, page 1
+                if (pdfId === '1' && pageNum === 1) {
                     const lines = text.split('\n').map(line => line.trim()).filter(line => line);
                     let currentQuestion = '';
                     let questionStart = false;
@@ -601,6 +595,7 @@
             } catch (error) {
                 console.error(`OCR error for ${pdfFiles.find(p => p.id === pdfId).name}, page ${pageNum}:`, error);
                 alert(`Failed to process OCR for page ${pageNum}. Please try again.`);
+                pdfContent[pdfId][pageNum - 1].text = ''; // Set to empty string on error
             }
             loadingIndicator.classList.remove('active');
         }
@@ -832,10 +827,8 @@
             const selectedId = selectedSlides[0];
             const pdfName = pdfFiles.find(pdf => pdf.id === selectedId).name;
 
-            // Simulate thinking time
             await new Promise(resolve => setTimeout(resolve, 1500));
 
-            // Check for pre-defined answer
             const normalizedQuery = message.trim().replace(/\s+/g, ' ').toLowerCase();
             const preDefinedAnswer = questionAnswers[selectedId] && Object.keys(questionAnswers[selectedId]).find(key => 
                 key.toLowerCase() === normalizedQuery || 
@@ -868,14 +861,13 @@
                 return;
             }
 
-            // Fuzzy match against OCR-extracted questions
             const selectedPdf = pdfContent[selectedId];
             let context = '';
             let relevantPages = [];
             let matchedQuestion = null;
             if (selectedPdf && selectedPdf.length > 0) {
                 for (let pageNum = 1; pageNum <= selectedPdf.length; pageNum++) {
-                    if (!pdfContent[selectedId][pageNum - 1].text) {
+                    if (!pdfContent[selectedId][pageNum - 1]?.text) {
                         await processPageOCR(selectedId, pageNum);
                     }
                 }
@@ -883,43 +875,60 @@
                 if (questions.length > 0) {
                     const matches = questions.map(q => fuzzyMatch(normalizedQuery, q.question));
                     matches.sort((a, b) => b.score - a.score);
-                    if (matches[0].score > 0.5) { // Threshold for a good match
+                    if (matches[0].score > 0.5) {
                         matchedQuestion = matches[0].question;
                         relevantPages = [matches[0].question.page];
-                        context = pdfContent[selectedId][matches[0].question.page - 1].text;
+                        context = pdfContent[selectedId][matches[0].question.page - 1]?.text || '';
                     }
                 }
                 if (!matchedQuestion) {
                     const queryWords = normalizedQuery.split(/\s+/);
                     for (const page of selectedPdf) {
-                        if (page.text && queryWords.some(word => keywordMap[selectedId][word]?.includes(page.page))) {
+                        if (page?.text && queryWords.some(word => keywordMap[selectedId][word]?.includes(page.page))) {
                             context += page.text + '\n';
                             relevantPages.push(page.page);
                         }
                     }
-                    if (!context) {
-                        context = selectedPdf[0].text || '';
+                    if (!context && selectedPdf[0]?.text) {
+                        context = selectedPdf[0].text;
                         relevantPages.push(1);
                     }
                 }
             } else {
                 console.log('No content for selected PDF:', selectedId);
-                alert('Selected tutorial content not loaded. Please try again.');
+                const botMessage = document.createElement('div');
+                botMessage.className = 'message bot';
+                botMessage.innerHTML = `
+                    <div class="avatar"><i data-lucide="bot" class="h-4 w-4"></i></div>
+                    <div class="message-content">
+                        <p>Selected tutorial content not loaded. Please try again.</p>
+                        <div class="meta">
+                            <span>${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                            <div class="actions">
+                                <button onclick="handleReaction('temp', 'like')"><i data-lucide="thumbs-up" class="h-3 w-3"></i></button>
+                                <button onclick="handleReaction('temp', 'dislike')"><i data-lucide="thumbs-down" class="h-3 w-3"></i></button>
+                                <button onclick="regenerateResponse('temp')"><i data-lucide="rotate-ccw" class="h-3 w-3"></i></button>
+                                <button onclick="copyMessage('Selected tutorial content not loaded. Please try again.')"><i data-lucide="copy" class="h-3 w-3"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                `;
                 messagesContainer.removeChild(typingIndicator);
+                messagesContainer.appendChild(botMessage);
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                lucide.createIcons();
                 return;
             }
 
             try {
                 let answer;
                 if (matchedQuestion) {
-                    // Use OCR context to answer, supplemented by general knowledge
                     answer = `
                         <div class="section-content">
                             <p>Based on your slides, the question "${matchedQuestion}" relates to the following content:</p>
                             <p>${context.substring(0, 1000)}...</p>
                             <p>Since the slides list the question without a direct answer, here's an explanation:</p>
                     `;
-                    // Provide specific answers for known questions
                     if (matchedQuestion.toLowerCase().includes('syntax') && matchedQuestion.toLowerCase().includes('semantics')) {
                         answer += `
                             <p>The <strong>syntax</strong> of an algorithm refers to the rules governing its structure and notation, ensuring it is written correctly (e.g., proper pseudocode formatting or programming language grammar). The <strong>semantics</strong> of an algorithm refers to the meaning or effect of those instructions, i.e., what the algorithm does when executed (e.g., sorting a list or computing a sum).</p>
@@ -947,7 +956,6 @@
                     }
                     answer = enhanceResponse(answer, message, relevantPages);
                 } else {
-                    // Fallback to Wikipedia
                     console.log('Sending query to server:', message);
                     const response = await fetch('/.netlify/functions/query-wikipedia', {
                         method: 'POST',
@@ -985,8 +993,27 @@
                 lucide.createIcons();
             } catch (error) {
                 console.error('Server query error:', error.message);
-                alert(`Error querying server: ${error.message}. Please try again.`);
+                const botMessage = document.createElement('div');
+                botMessage.className = 'message bot';
+                botMessage.innerHTML = `
+                    <div class="avatar"><i data-lucide="bot" class="h-4 w-4"></i></div>
+                    <div class="message-content">
+                        <p>Error querying server: ${error.message}. Please try again.</p>
+                        <div class="meta">
+                            <span>${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                            <div class="actions">
+                                <button onclick="handleReaction('temp', 'like')"><i data-lucide="thumbs-up" class="h-3 w-3"></i></button>
+                                <button onclick="handleReaction('temp', 'dislike')"><i data-lucide="thumbs-down" class="h-3 w-3"></i></button>
+                                <button onclick="regenerateResponse('temp')"><i data-lucide="rotate-ccw" class="h-3 w-3"></i></button>
+                                <button onclick="copyMessage('Error querying server: ${error.message}. Please try again.')"><i data-lucide="copy" class="h-3 w-3"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                `;
                 messagesContainer.removeChild(typingIndicator);
+                messagesContainer.appendChild(botMessage);
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                lucide.createIcons();
             }
         }
 
