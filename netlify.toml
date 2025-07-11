@@ -4,4 +4,4 @@
   functions = "functions"
 
 [functions]
-  "query-ai" = { schedule = "@hourly" }
+  "query-wikipedia" = { schedule = "@hourly" }
