@@ -461,6 +461,24 @@
             { id: '2', name: 'JBS_GL_TUT_2.pdf', path: '/pdfs/JBS_GL_TUT_2.pdf', pages: 5, size: '1412kb', date: '2025-07-11' },
             { id: '3', name: 'JBS_GL_TUT_3.pdf', path: '/pdfs/JBS_GL_TUT_3.pdf', pages: 5, size: '1353kb', date: '2025-07-11' }
         ];
+        const questionAnswers = {
+            '1': { // JBS_GL_TUT_1.pdf
+                'Differentiate between the Syntax and the Semantics of an algorithm': {
+                    answer: `
+                        <div class="section-content">
+                            <p>The <strong>syntax</strong> of an algorithm refers to the rules governing its structure and notation, ensuring it is written correctly (e.g., proper pseudocode formatting or programming language grammar). The <strong>semantics</strong> of an algorithm refers to the meaning or effect of those instructions, i.e., what the algorithm does when executed (e.g., sorting a list or computing a sum).</p>
+                            <h2>Wikipedia Information</h2>
+                            <h3>Syntax (programming languages)</h3>
+                            <p>In computer science, the syntax of a computer language is the rules governing the structure of valid statements, specifying how symbols and words must be arranged.</p>
+                            <h3>Semantics (computer science)</h3>
+                            <p>In programming language theory, semantics is the field concerned with the rigorous mathematical study of the meaning of programming languages and their constructs.</p>
+                            <p><strong>Example</strong>: In pseudocode, <code>IF x > 0 THEN print x</code> has correct syntax if it follows the language's rules (e.g., proper keywords and structure). Its semantics ensure that it prints the value of x only if x is positive.</p>
+                        </div>
+                    `,
+                    source: 'JBS_GL_TUT_1, page 1'
+                }
+            }
+        };
         let pdfContent = {};
         let keywordMap = {};
         let selectedSlides = [];
@@ -523,7 +541,7 @@
                 const typedArray = new Uint8Array(arrayBuffer);
                 const pdfDoc = await pdfjsLib.getDocument(typedArray).promise;
                 const page = await pdfDoc.getPage(pageNum);
-                const viewport = page.getViewport({ scale: 1.0 });
+                const viewport = page.getViewport({ scale: 2.0 }); // Increased scale for better OCR
                 const canvas = document.createElement('canvas');
                 const context = canvas.getContext('2d');
                 canvas.height = viewport.height;
@@ -539,7 +557,9 @@
                     if (!keywordMap[pdfId][word]) {
                         keywordMap[pdfId][word] = [];
                     }
-                    keywordMap[pdfId][word].push(pageNum);
+                    if (!keywordMap[pdfId][word].includes(pageNum)) {
+                        keywordMap[pdfId][word].push(pageNum);
+                    }
                 });
                 console.log(`OCR completed for ${pdfFiles.find(p => p.id === pdfId).name}, page ${pageNum}`);
             } catch (error) {
@@ -772,10 +792,45 @@
             messagesContainer.appendChild(typingIndicator);
             messagesContainer.scrollTop = messagesContainer.scrollHeight;
 
+            const selectedId = selectedSlides[0];
+            const pdfName = pdfFiles.find(pdf => pdf.id === selectedId).name;
+
+            // Check for pre-defined answer
+            const normalizedQuery = message.trim().replace(/\s+/g, ' ').toLowerCase();
+            const preDefinedAnswer = questionAnswers[selectedId] && Object.keys(questionAnswers[selectedId]).find(key => 
+                key.toLowerCase() === normalizedQuery || 
+                key.toLowerCase().includes(normalizedQuery) || 
+                normalizedQuery.includes(key.toLowerCase())
+            );
+            if (preDefinedAnswer) {
+                const { answer, source } = questionAnswers[selectedId][preDefinedAnswer];
+                const botMessage = document.createElement('div');
+                botMessage.className = 'message bot';
+                botMessage.innerHTML = `
+                    <div class="avatar"><i data-lucide="bot" class="h-4 w-4"></i></div>
+                    <div class="message-content">
+                        <p>${answer}<br><br><em>Source: ${source}</em></p>
+                        <div class="meta">
+                            <span>${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                            <div class="actions">
+                                <button onclick="handleReaction('temp', 'like')"><i data-lucide="thumbs-up" class="h-3 w-3"></i></button>
+                                <button onclick="handleReaction('temp', 'dislike')"><i data-lucide="thumbs-down" class="h-3 w-3"></i></button>
+                                <button onclick="regenerateResponse('temp')"><i data-lucide="rotate-ccw" class="h-3 w-3"></i></button>
+                                <button onclick="copyMessage('${answer}')"><i data-lucide="copy" class="h-3 w-3"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                messagesContainer.removeChild(typingIndicator);
+                messagesContainer.appendChild(botMessage);
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                lucide.createIcons();
+                return;
+            }
+
+            // Fallback to OCR and Wikipedia
             let context = '';
             let relevantPages = [];
-            let pdfName = '';
-            const selectedId = selectedSlides[0];
             const selectedPdf = pdfContent[selectedId];
             if (selectedPdf && selectedPdf.length > 0) {
                 const queryWords = message.toLowerCase().split(/\s+/);
@@ -794,7 +849,6 @@
                     context = selectedPdf[0].text || '';
                     relevantPages.push(1);
                 }
-                pdfName = pdfFiles.find(pdf => pdf.id === selectedId).name;
             } else {
                 console.log('No content for selected PDF:', selectedId);
                 alert('Selected tutorial content not loaded. Please try again.');
