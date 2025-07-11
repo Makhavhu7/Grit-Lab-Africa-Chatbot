@@ -949,6 +949,11 @@
                             <p><strong>True</strong>. <strong>Dry-running</strong> involves manually stepping through an algorithm to trace its execution, often using a table to track variables. <strong>Desk-checking</strong> involves reviewing the code for errors without executing it. Dry-running simulates execution, while desk-checking focuses on code review.</p>
                             <p><strong>Example</strong>: Dry-running a loop tracks variable changes; desk-checking scans for syntax errors.</p>
                         `;
+                    } else if (matchedQuestion.toLowerCase().includes('union') && matchedQuestion.toLowerCase().includes('even numbers') && matchedQuestion.toLowerCase().includes('odd numbers')) {
+                        answer += `
+                            <p>The statement is <strong>wrong</strong>. The union of the set of all even numbers and the set of all odd numbers <strong>is equal</strong> to the entire set of integers (ℤ). Every integer is either even (divisible by 2) or odd (not divisible by 2), so their union covers all integers. The statement incorrectly claims they are not equal to the entire number system, but assuming the number system refers to integers, the union is exactly ℤ.</p>
+                            <p><strong>Example</strong>: Even numbers = {..., -2, 0, 2, 4, ...}, Odd numbers = {..., -1, 1, 3, ...}. Their union = {..., -2, -1, 0, 1, 2, 3, ...} = ℤ.</p>
+                        `;
                     } else {
                         answer += `
                             <p>The slides do not provide a direct answer to this question. Please clarify or provide more context for a detailed response.</p>
