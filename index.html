@@ -6,12 +6,14 @@
     <title>Grit Lab - Chat with Slides</title>
     <meta name="description" content="Chat with your study slides using StudyFlow">
     <meta name="author" content="StudyFlow">
-    <!-- Lucide Icons Local -->
-    <script src="/static/lucide.min.js"></script>
-    <!-- PDF.js Local -->
-    <script src="/static/pdf.min.js"></script>
+    <!-- Lucide Icons CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/lucide@0.441.0/dist/umd/lucide.min.js"></script>
+    <!-- PDF.js CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+
     <script>
-        pdfjsLib.GlobalWorkerOptions.workerSrc = '/static/pdf.worker.min.js';
+        // Set PDF.js worker source
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
     </script>
     <style>
         :root {
@@ -546,56 +548,16 @@
                 <span class="badge" id="selectionBadge">0 slides selected</span>
             </div>
             <div class="slides-content">
-                <div id="slidesContainer" class="slides-grid">
-                    <div class="slide-card" data-id="1" onclick="toggleSlideSelection('1')">
-                        <div class="thumbnail">
-                            <img src="https://via.placeholder.com/150" alt="ACSSE_IFM02A2_Tut2.pdf">
-                        </div>
-                        <div class="content">
-                            <h3 class="title">ACSSE_IFM02A2_Tut2.pdf</h3>
-                            <div class="meta">
-                                <span>5 pages</span>
-                                <span>Unknown</span>
-                            </div>
-                            <div class="date">2024-06-01</div>
-                        </div>
-                    </div>
-                    <div class="slide-card" data-id="2" onclick="toggleSlideSelection('2')">
-                        <div class="thumbnail">
-                            <img src="https://via.placeholder.com/150" alt="IFM2A_Chapter1.pdf">
-                        </div>
-                        <div class="content">
-                            <h3 class="title">IFM2A_Chapter1.pdf</h3>
-                            <div class="meta">
-                                <span>7 pages</span>
-                                <span>Unknown</span>
-                            </div>
-                            <div class="date">2024-06-02</div>
-                        </div>
-                    </div>
-                    <div class="slide-card" data-id="3" onclick="toggleSlideSelection('3')">
-                        <div class="thumbnail">
-                            <img src="https://via.placeholder.com/150" alt="ACSSE_IFM02A2_Chap11.pdf">
-                        </div>
-                        <div class="content">
-                            <h3 class="title">ACSSE_IFM02A2_Chap11.pdf</h3>
-                            <div class="meta">
-                                <span>7 pages</span>
-                                <span>Unknown</span>
-                            </div>
-                            <div class="date">2024-06-03</div>
-                        </div>
-                    </div>
-                </div>
+                <div id="slidesContainer" class="slides-grid"></div>
             </div>
         </div>
     </div>
     <script>
         lucide.createIcons();
         const pdfFiles = [
-            { id: '1', name: 'ACSSE_IFM02A2_Tut2.pdf', path: 'pdfs/Equations and Inequalities.pdf', pages: 5, size: 'Unknown', date: '2024-06-01' },
-            { id: '2', name: 'IFM2A_Chapter1.pdf', path: 'pdfs/Mechanical Energy.pdf', pages: 7, size: 'Unknown', date: '2024-06-02' },
-            { id: '3', name: 'ACSSE_IFM02A2_Chap11.pdf', path: 'pdfs/tRIGONOMETRY.pdf', pages: 7, size: 'Unknown', date: '2024-06-03' }
+            { id: '1', name: 'ACSSE_IFM02A2_Tut2.pdf', path: '/pdfs/Equations and Inequalities.pdf', pages: 5, size: '45kb', date: '2024-06-01' },
+            { id: '2', name: 'IFM2A_Chapter1.pdf', path: '/pdfs/Mechanical Energy.pdf', pages: 7, size: '45kb', date: '2024-06-02' },
+            { id: '3', name: 'ACSSE_IFM02A2_Chap11.pdf', path: '/pdfs/TRIGONOMETRY.pdf', pages: 7, size: '59kb', date: '2024-06-03' }
         ];
         let pdfContent = {};
         let selectedSlides = [];
@@ -643,7 +605,7 @@
                 slideCard.onclick = () => toggleSlideSelection(pdf.id);
                 slideCard.innerHTML = `
                     <div class="thumbnail">
-                        <img src="https://via.placeholder.com/150" alt="${pdf.name}">
+                        <img src="/static/placeholder.png" alt="${pdf.name}">
                     </div>
                     <div class="content">
                         <h3 class="title">${pdf.name}</h3>
@@ -766,7 +728,7 @@
                 const response = await fetch('/.netlify/functions/query-ai', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ ...payload, provider: 'portkey', model: 'gpt-4o' })
+                    body: JSON.stringify({ ...payload, provider: 'portkey', model: 'gpt-4o-mini' })
                 });
                 if (!response.ok) {
                     throw new Error(`Portkey failed: HTTP ${response.status}`);
@@ -800,7 +762,7 @@
                 try {
                     const fallbackPayload = {
                         ...payload,
-                        model: 'deepseek-ai/DeepSeek-V3'
+                        model: 'meta-llama/Llama-3-70b-chat-hf'
                     };
                     console.log('Sending payload to Together AI:', JSON.stringify(fallbackPayload));
                     const fallbackResponse = await fetch('/.netlify/functions/query-ai', {
@@ -809,10 +771,11 @@
                         body: JSON.stringify({ ...fallbackPayload, provider: 'together' })
                     });
                     if (!fallbackResponse.ok) {
+                        const contentType = fallbackResponse.headers.get('content-type');
                         let errorData;
-                        try {
+                        if (contentType && contentType.includes('application/json')) {
                             errorData = await fallbackResponse.json();
-                        } catch (e) {
+                        } else {
                             errorData = { error: `HTTP ${fallbackResponse.status}`, details: await fallbackResponse.text() };
                         }
                         let errorMessage = errorData.error?.message || JSON.stringify(errorData, null, 2);
@@ -821,7 +784,7 @@
                         } else if (fallbackResponse.status === 401) {
                             errorMessage = `Together AI: Unauthorized. Please verify TOGETHER_API_KEY in Netlify environment variables.`;
                         } else if (errorData.error?.code === 'model_not_supported') {
-                            errorMessage = `Together AI: The model 'deepseek-ai/DeepSeek-V3' is not supported. Check available models at https://www.together.ai.`;
+                            errorMessage = `Together AI: The model 'meta-llama/Llama-3-70b-chat-hf' is not supported. Check available models at https://www.together.ai.`;
                         }
                         throw new Error(errorMessage);
                     }
