@@ -565,7 +565,7 @@
             tutButtonsContainer.innerHTML = '';
             pdfFiles.forEach(pdf => {
                 const button = document.createElement('button');
-                button.textContent = pdf.name;
+                button.textContent = pdf.name.replace('.pdf', '');
                 button.onclick = () => selectTutorial(pdf.id);
                 tutButtonsContainer.appendChild(button);
             });
@@ -582,14 +582,14 @@
             botMessage.innerHTML = `
                 <div class="avatar"><i data-lucide="bot" class="h-4 w-4"></i></div>
                 <div class="message-content">
-                    <p>Great! You've selected <strong>${pdf.name}</strong>. Ask me anything about this tutorial!</p>
+                    <p>Great! You've selected <strong>${pdf.name.replace('.pdf', '')}</strong>. Ask me anything about this tutorial!</p>
                     <div class="meta">
                         <span>${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                         <div class="actions">
                             <button onclick="handleReaction('temp', 'like')"><i data-lucide="thumbs-up" class="h-3 w-3"></i></button>
                             <button onclick="handleReaction('temp', 'dislike')"><i data-lucide="thumbs-down" class="h-3 w-3"></i></button>
                             <button onclick="regenerateResponse('temp')"><i data-lucide="rotate-ccw" class="h-3 w-3"></i></button>
-                            <button onclick="copyMessage('Great! You\'ve selected ${pdf.name}. Ask me anything about this tutorial!')"><i data-lucide="copy" class="h-3 w-3"></i></button>
+                            <button onclick="copyMessage('Great! You\'ve selected ${pdf.name.replace('.pdf', '')}. Ask me anything about this tutorial!')"><i data-lucide="copy" class="h-3 w-3"></i></button>
                         </div>
                     </div>
                 </div>
@@ -663,7 +663,7 @@
                     <div class="message-content">
                         <p>Please select a tutorial first.</p>
                         <div class="tut-buttons">
-                            ${pdfFiles.map(pdf => `<button onclick="selectTutorial('${pdf.id}')">${pdf.name}</button>`).join('')}
+                            ${pdfFiles.map(pdf => `<button onclick="selectTutorial('${pdf.id}')">${pdf.name.replace('.pdf', '')}</button>`).join('')}
                         </div>
                         <div class="meta">
                             <span>${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
@@ -760,7 +760,7 @@
                 botMessage.innerHTML = `
                     <div class="avatar"><i data-lucide="bot" class="h-4 w-4"></i></div>
                     <div class="message-content">
-                        <p>${answer}<br><br><em>Source: ${pdfName}, slide ${relevantPage}</em></p>
+                        <p>${answer}<br><br><em>Source: ${pdfName.replace('.pdf', '')}, slide ${relevantPage}</em></p>
                         <div class="meta">
                             <span>${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                             <div class="actions">
