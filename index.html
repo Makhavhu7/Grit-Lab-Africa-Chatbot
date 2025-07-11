@@ -463,11 +463,6 @@
                     answer: `
                         <div class="section-content">
                             <p>The <strong>syntax</strong> of an algorithm refers to the rules governing its structure and notation, ensuring it is written correctly (e.g., proper pseudocode formatting or programming language grammar). The <strong>semantics</strong> of an algorithm refers to the meaning or effect of those instructions, i.e., what the algorithm does when executed (e.g., sorting a list or computing a sum).</p>
-                            <h2>Wikipedia Information</h2>
-                            <h3>Syntax (programming languages)</h3>
-                            <p>In computer science, the syntax of a computer language is the rules governing the structure of valid statements, specifying how symbols and words must be arranged.</p>
-                            <h3>Semantics (computer science)</h3>
-                            <p>In programming language theory, semantics is the field concerned with the rigorous mathematical study of the meaning of programming languages and their constructs.</p>
                             <p><strong>Example</strong>: In pseudocode, <code>IF x > 0 THEN print x</code> has correct syntax if it follows the language's rules (e.g., proper keywords and structure). Its semantics ensure that it prints the value of x only if x is positive.</p>
                         </div>
                     `,
@@ -481,11 +476,14 @@
         let selectedSlides = [];
         let pdfThumbnails = {};
 
-        function fuzzyMatch(query, question) {
-            const cleanQuery = query.toLowerCase().replace(/[^\w\s]/g, '').split(/\s+/).filter(w => w.length > 2);
-            const cleanQuestion = question.toLowerCase().replace(/[^\w\s]/g, '').split(/\s+/).filter(w => w.length > 2);
-            const intersection = cleanQuery.filter(word => cleanQuestion.includes(word));
-            const score = intersection.length / Math.max(cleanQuery.length, cleanQuestion.length);
+        function fuzzyMatch(query, question, keywords) {
+            const cleanQuery = query.toLowerCase().replace(/[^\w\s]/g, '').split(/\s+/).filter(w => w.length > 3);
+            const cleanQuestion = question.toLowerCase().replace(/[^\w\s]/g, '').split(/\s+/).filter(w => w.length > 3);
+            const cleanKeywords = keywords.map(k => k.toLowerCase().replace(/[^\w\s]/g, '')).filter(k => k.length > 3);
+            const queryWords = new Set(cleanQuery);
+            const intersection = cleanQuestion.filter(word => queryWords.has(word));
+            const keywordIntersection = cleanKeywords.filter(keyword => queryWords.has(keyword));
+            const score = (intersection.length + keywordIntersection.length * 2) / Math.max(cleanQuery.length, cleanQuestion.length);
             return { score, question };
         }
 
@@ -519,7 +517,7 @@
                     for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++) {
                         pdfContent[pdf.id].push({ page: pageNum, text: null });
                     }
-                    pdf.pages = pdfDoc.numPages; // Update page count
+                    pdf.pages = pdfDoc.numPages;
                     console.log(`Loaded thumbnail for ${pdf.name}, ${pdf.pages} pages`);
                 } catch (error) {
                     console.error(`Error loading ${pdf.name}:`, error);
@@ -558,7 +556,7 @@
                     logger: m => console.log(`OCR progress for page ${pageNum}: ${Math.round(m.progress * 100)}%`)
                 });
                 pdfContent[pdfId][pageNum - 1].text = text || '';
-                const words = text.toLowerCase().split(/\s+/).filter(word => word.length > 2);
+                const words = text.toLowerCase().split(/\s+/).filter(word => word.length > 3);
                 words.forEach(word => {
                     if (!keywordMap[pdfId][word]) {
                         keywordMap[pdfId][word] = [];
@@ -572,6 +570,7 @@
                     const lines = text.split('\n').map(line => line.trim()).filter(line => line);
                     let currentQuestion = '';
                     let questionStart = false;
+                    let questionKeywords = [];
                     lines.forEach(line => {
                         if (line.match(/Section A:/i)) {
                             questionStart = true;
@@ -579,15 +578,19 @@
                         }
                         if (questionStart && line.match(/^\d+\.\s/)) {
                             if (currentQuestion) {
-                                pdfQuestions[pdfId].push({ question: currentQuestion, page: pageNum });
+                                const keywords = currentQuestion.toLowerCase().split(/\s+/).filter(word => word.length > 3 && !['what', 'which', 'give', 'correct', 'wrong', 'reason', 'answer'].includes(word));
+                                pdfQuestions[pdfId].push({ question: currentQuestion, page: pageNum, keywords });
                             }
                             currentQuestion = line.replace(/^\d+\.\s/, '');
+                            questionKeywords = [];
                         } else if (questionStart && currentQuestion && !line.match(/^\d+\.\s/)) {
                             currentQuestion += ' ' + line;
+                            questionKeywords.push(...line.toLowerCase().split(/\s+/).filter(word => word.length > 3 && !['what', 'which', 'give', 'correct', 'wrong', 'reason', 'answer'].includes(word)));
                         }
                     });
                     if (currentQuestion) {
-                        pdfQuestions[pdfId].push({ question: currentQuestion, page: pageNum });
+                        const keywords = currentQuestion.toLowerCase().split(/\s+/).filter(word => word.length > 3 && !['what', 'which', 'give', 'correct', 'wrong', 'reason', 'answer'].includes(word));
+                        pdfQuestions[pdfId].push({ question: currentQuestion, page: pageNum, keywords });
                     }
                 }
 
@@ -595,7 +598,7 @@
             } catch (error) {
                 console.error(`OCR error for ${pdfFiles.find(p => p.id === pdfId).name}, page ${pageNum}:`, error);
                 alert(`Failed to process OCR for page ${pageNum}. Please try again.`);
-                pdfContent[pdfId][pageNum - 1].text = ''; // Set to empty string on error
+                pdfContent[pdfId][pageNum - 1].text = '';
             }
             loadingIndicator.classList.remove('active');
         }
@@ -873,20 +876,22 @@
                 }
                 const questions = pdfQuestions[selectedId] || [];
                 if (questions.length > 0) {
-                    const matches = questions.map(q => fuzzyMatch(normalizedQuery, q.question));
+                    const matches = questions.map(q => fuzzyMatch(normalizedQuery, q.question, q.keywords || []));
                     matches.sort((a, b) => b.score - a.score);
-                    if (matches[0].score > 0.5) {
+                    if (matches[0].score > 0.3) {
                         matchedQuestion = matches[0].question;
-                        relevantPages = [matches[0].question.page];
-                        context = pdfContent[selectedId][matches[0].question.page - 1]?.text || '';
+                        relevantPages = [questions.find(q => q.question === matchedQuestion).page];
+                        context = pdfContent[selectedId][relevantPages[0] - 1]?.text || '';
                     }
                 }
                 if (!matchedQuestion) {
-                    const queryWords = normalizedQuery.split(/\s+/);
+                    const queryWords = normalizedQuery.split(/\s+/).filter(word => word.length > 3);
                     for (const page of selectedPdf) {
                         if (page?.text && queryWords.some(word => keywordMap[selectedId][word]?.includes(page.page))) {
                             context += page.text + '\n';
-                            relevantPages.push(page.page);
+                            if (!relevantPages.includes(page.page)) {
+                                relevantPages.push(page.page);
+                            }
                         }
                     }
                     if (!context && selectedPdf[0]?.text) {
@@ -923,40 +928,46 @@
             try {
                 let answer;
                 if (matchedQuestion) {
-                    answer = `
-                        <div class="section-content">
-                            <p>Based on your slides, the question "${matchedQuestion}" relates to the following content:</p>
-                            <p>${context.substring(0, 1000)}...</p>
-                            <p>Since the slides list the question without a direct answer, here's an explanation:</p>
-                    `;
                     if (matchedQuestion.toLowerCase().includes('syntax') && matchedQuestion.toLowerCase().includes('semantics')) {
-                        answer += `
-                            <p>The <strong>syntax</strong> of an algorithm refers to the rules governing its structure and notation, ensuring it is written correctly (e.g., proper pseudocode formatting or programming language grammar). The <strong>semantics</strong> of an algorithm refers to the meaning or effect of those instructions, i.e., what the algorithm does when executed (e.g., sorting a list or computing a sum).</p>
-                            <p><strong>Example</strong>: In pseudocode, <code>IF x > 0 THEN print x</code> has correct syntax if it follows the language's rules. Its semantics ensure that it prints x if x is positive.</p>
+                        answer = `
+                            <div class="section-content">
+                                <p>The <strong>syntax</strong> of an algorithm is the set of rules for its structure and notation, ensuring it is written correctly, like proper pseudocode or programming language grammar. The <strong>semantics</strong> is the meaning or effect of those instructions, i.e., what the algorithm does when run, like sorting a list.</p>
+                                <p><strong>Example</strong>: In pseudocode, <code>IF x > 0 THEN print x</code> has correct syntax if it follows the language's rules. Its semantics ensure it prints x only if x is positive.</p>
+                            </div>
                         `;
                     } else if (matchedQuestion.toLowerCase().includes('boolean') && matchedQuestion.toLowerCase().includes('logical operator')) {
-                        answer += `
-                            <p>A <strong>Boolean value</strong> is a data type that is either TRUE or FALSE, representing logical truth values (e.g., TRUE, FALSE). <strong>Logical operators</strong> operate on Boolean values to produce another Boolean value. There are three main logical operators: AND (true if both operands are true), OR (true if at least one is true), and NOT (inverts the truth value).</p>
-                            <p><strong>Example</strong>: If p is TRUE and q is FALSE, then p AND q is FALSE, p OR q is TRUE, and NOT p is FALSE.</p>
+                        answer = `
+                            <div class="section-content">
+                                <p>A <strong>Boolean value</strong> is either TRUE or FALSE, representing logical truth. <strong>Logical operators</strong> combine Boolean values to produce another Boolean value. The three main operators are AND (true if both are true), OR (true if at least one is true), and NOT (inverts the value).</p>
+                                <p><strong>Example</strong>: If p is TRUE and q is FALSE, then p AND q is FALSE, p OR q is TRUE, and NOT p is FALSE.</p>
+                            </div>
                         `;
                     } else if (matchedQuestion.toLowerCase().includes('data structure') && matchedQuestion.toLowerCase().includes('algorithm')) {
-                        answer += `
-                            <p>A <strong>data structure</strong> is a way to organize and store data for efficient access (e.g., arrays, lists, trees). An <strong>algorithm</strong> is a set of instructions to solve a problem (e.g., sorting, searching). Data structures provide the framework for data, while algorithms process that data.</p>
-                            <p><strong>Example</strong>: An array (data structure) stores numbers, and quicksort (algorithm) sorts them.</p>
+                        answer = `
+                            <div class="section-content">
+                                <p>A <strong>data structure</strong> organizes data for efficient access, like arrays or trees. An <strong>algorithm</strong> is a set of instructions to solve a problem, like sorting or searching. Data structures store data; algorithms process it.</p>
+                                <p><strong>Example</strong>: An array (data structure) holds numbers, and quicksort (algorithm) sorts them.</p>
+                            </div>
                         `;
                     } else if (matchedQuestion.toLowerCase().includes('dry-running') && matchedQuestion.toLowerCase().includes('desk-checking')) {
-                        answer += `
-                            <p><strong>True</strong>. <strong>Dry-running</strong> involves manually stepping through an algorithm to trace its execution, often using a table to track variables. <strong>Desk-checking</strong> involves reviewing the code for errors without executing it. Dry-running simulates execution, while desk-checking focuses on code review.</p>
-                            <p><strong>Example</strong>: Dry-running a loop tracks variable changes; desk-checking scans for syntax errors.</p>
+                        answer = `
+                            <div class="section-content">
+                                <p><strong>True</strong>. <strong>Dry-running</strong> is manually stepping through an algorithm to trace its execution, often tracking variables in a table. <strong>Desk-checking</strong> is reviewing code for errors without running it. Dry-running simulates execution; desk-checking focuses on code review.</p>
+                                <p><strong>Example</strong>: Dry-running a loop tracks variable changes; desk-checking scans for syntax errors.</p>
+                            </div>
                         `;
                     } else if (matchedQuestion.toLowerCase().includes('union') && matchedQuestion.toLowerCase().includes('even numbers') && matchedQuestion.toLowerCase().includes('odd numbers')) {
-                        answer += `
-                            <p>The statement is <strong>wrong</strong>. The union of the set of all even numbers and the set of all odd numbers <strong>is equal</strong> to the entire set of integers (ℤ). Every integer is either even (divisible by 2) or odd (not divisible by 2), so their union covers all integers. The statement incorrectly claims they are not equal to the entire number system, but assuming the number system refers to integers, the union is exactly ℤ.</p>
-                            <p><strong>Example</strong>: Even numbers = {..., -2, 0, 2, 4, ...}, Odd numbers = {..., -1, 1, 3, ...}. Their union = {..., -2, -1, 0, 1, 2, 3, ...} = ℤ.</p>
+                        answer = `
+                            <div class="section-content">
+                                <p>The statement that the union of all even numbers and all odd numbers is not equal to the entire set of integers is <strong>wrong</strong>. Every integer is either even (divisible by 2) or odd (not divisible by 2), so their union includes all integers (ℤ).</p>
+                                <p><strong>Example</strong>: Even numbers = {..., -2, 0, 2, 4, ...}, odd numbers = {..., -1, 1, 3, ...}. Their union = {..., -2, -1, 0, 1, 2, 3, ...} = ℤ.</p>
+                            </div>
                         `;
                     } else {
-                        answer += `
-                            <p>The slides do not provide a direct answer to this question. Please clarify or provide more context for a detailed response.</p>
+                        answer = `
+                            <div class="section-content">
+                                <p>Sorry, I couldn't find a direct answer to this question in the slides. Please clarify or provide more details for a detailed response.</p>
+                            </div>
                         `;
                     }
                     answer = enhanceResponse(answer, message, relevantPages);
@@ -972,7 +983,7 @@
                         throw new Error(`Server query failed: HTTP ${response.status}, ${errorText}`);
                     }
                     const result = await response.json();
-                    answer = result.content || 'Sorry, I couldn’t find relevant information.';
+                    answer = result.content || 'Sorry, I couldn’t find relevant information in the slides or online knowledge.';
                     answer = enhanceResponse(answer, message, relevantPages);
                 }
                 const botMessage = document.createElement('div');
@@ -1003,14 +1014,14 @@
                 botMessage.innerHTML = `
                     <div class="avatar"><i data-lucide="bot" class="h-4 w-4"></i></div>
                     <div class="message-content">
-                        <p>Error querying server: ${error.message}. Please try again.</p>
+                        <p>Error retrieving information: ${error.message}. Please try again.</p>
                         <div class="meta">
                             <span>${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                             <div class="actions">
                                 <button onclick="handleReaction('temp', 'like')"><i data-lucide="thumbs-up" class="h-3 w-3"></i></button>
                                 <button onclick="handleReaction('temp', 'dislike')"><i data-lucide="thumbs-down" class="h-3 w-3"></i></button>
                                 <button onclick="regenerateResponse('temp')"><i data-lucide="rotate-ccw" class="h-3 w-3"></i></button>
-                                <button onclick="copyMessage('Error querying server: ${error.message}. Please try again.')"><i data-lucide="copy" class="h-3 w-3"></i></button>
+                                <button onclick="copyMessage('Error retrieving information: ${error.message}. Please try again.')"><i data-lucide="copy" class="h-3 w-3"></i></button>
                             </div>
                         </div>
                     </div>
