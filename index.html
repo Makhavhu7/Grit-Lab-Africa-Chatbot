@@ -10,38 +10,38 @@
     <script src="https://cdn.jsdelivr.net/npm/lucide@0.441.0/dist/umd/lucide.min.js"></script>
     <!-- PDF.js CDN -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-
+    <!-- Tesseract.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.0/dist/tesseract.min.js"></script>
     <script>
-        // Set PDF.js worker source
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
     </script>
     <style>
         :root {
-            --background: 0 0% 90%; /* Light Grey */
-            --foreground: 0 0% 0%; /* Black */
-            --card: 0 0% 90%; /* Light Grey */
-            --card-foreground: 0 0% 0%; /* Black */
-            --primary: 43.3 96% 22.7%; /* DarkGoldenRod */
-            --primary-foreground: 0 0% 100%; /* White */
-            --secondary: 0 0% 90%; /* Light Grey */
-            --secondary-foreground: 0 0% 0%; /* Black */
-            --muted: 0 0% 80%; /* Slightly Darker Light Grey */
-            --muted-foreground: 0 0% 20%; /* Dark Grey */
-            --accent: 43.3 96% 22.7%; /* DarkGoldenRod */
-            --accent-foreground: 0 0% 100%; /* White */
-            --destructive: 0 62.8% 30.6%; /* Keeping original destructive color */
-            --destructive-foreground: 0 0% 100%; /* White */
-            --border: 0 0% 80%; /* Light Grey */
-            --input: 0 0% 80%; /* Light Grey */
-            --ring: 43.3 96% 22.7%; /* DarkGoldenRod */
-            --sidebar-background: 0 0% 20%; /* Dark Grey */
-            --sidebar-foreground: 0 0% 100%; /* White */
-            --sidebar-primary: 43.3 96% 22.7%; /* DarkGoldenRod */
-            --sidebar-primary-foreground: 0 0% 100%; /* White */
-            --sidebar-accent: 0 0% 30%; /* Darker Grey */
-            --sidebar-accent-foreground: 0 0% 100%; /* White */
-            --sidebar-border: 0 0% 30%; /* Darker Grey */
-            --sidebar-ring: 43.3 96% 22.7%; /* DarkGoldenRod */
+            --background: 0 0% 90%;
+            --foreground: 0 0% 0%;
+            --card: 0 0% 90%;
+            --card-foreground: 0 0% 0%;
+            --primary: 43.3 96% 22.7%;
+            --primary-foreground: 0 0% 100%;
+            --secondary: 0 0% 90%;
+            --secondary-foreground: 0 0% 0%;
+            --muted: 0 0% 80%;
+            --muted-foreground: 0 0% 20%;
+            --accent: 43.3 96% 22.7%;
+            --accent-foreground: 0 0% 100%;
+            --destructive: 0 62.8% 30.6%;
+            --destructive-foreground: 0 0% 100%;
+            --border: 0 0% 80%;
+            --input: 0 0% 80%;
+            --ring: 43.3 96% 22.7%;
+            --sidebar-background: 0 0% 20%;
+            --sidebar-foreground: 0 0% 100%;
+            --sidebar-primary: 43.3 96% 22.7%;
+            --sidebar-primary-foreground: 0 0% 100%;
+            --sidebar-accent: 0 0% 30%;
+            --sidebar-accent-foreground: 0 0% 100%;
+            --sidebar-border: 0 0% 30%;
+            --sidebar-ring: 43.3 96% 22.7%;
             --radius: 0.5rem;
         }
         body {
@@ -492,20 +492,20 @@
                         <p class="subtitle"><i data-lucide="book-open" class="h-3 w-3"></i>Ready to help with your slides</p>
                     </div>
                 </div>
-                <span class="badge">AI Powered</span>
+                <span class="badge">Wikipedia Powered</span>
             </div>
             <div class="chat-messages">
                 <div class="message bot">
                     <div class="avatar"><i data-lucide="bot" class="h-4 w-4"></i></div>
                     <div class="message-content">
-                        <p>👋 Hello! I'm your AI study assistant. Select a slide and ask me anything!</p>
+                        <p>👋 Hello! I'm your study assistant. Select a slide and ask me anything!</p>
                         <div class="meta">
                             <span>5:30 PM</span>
                             <div class="actions">
                                 <button onclick="handleReaction('1', 'like')"><i data-lucide="thumbs-up" class="h-3 w-3"></i></button>
                                 <button onclick="handleReaction('1', 'dislike')"><i data-lucide="thumbs-down" class="h-3 w-3"></i></button>
                                 <button onclick="regenerateResponse('1')"><i data-lucide="rotate-ccw" class="h-3 w-3"></i></button>
-                                <button onclick="copyMessage('Hello! I\'m your AI study assistant...')"><i data-lucide="copy" class="h-3 w-3"></i></button>
+                                <button onclick="copyMessage('Hello! I\'m your study assistant...')"><i data-lucide="copy" class="h-3 w-3"></i></button>
                             </div>
                         </div>
                     </div>
@@ -529,7 +529,7 @@
                     </div>
                     <button type="submit" class="send-button"><i data-lucide="send" class="h-4 w-4"></i></button>
                 </form>
-                <p class="input-info">Press Enter to send • Shift+Enter for new line • AI can make mistakes</p>
+                <p class="input-info">Press Enter to send • Shift+Enter for new line • Answers sourced from Wikipedia</p>
             </div>
         </div>
         <div class="slides-container">
@@ -560,6 +560,7 @@
             { id: '3', name: 'ACSSE_IFM02A2_Chap11.pdf', path: '/pdfs/TRIGONOMETRY.pdf', pages: 7, size: '59kb', date: '2024-06-03' }
         ];
         let pdfContent = {};
+        let keywordMap = {};
         let selectedSlides = [];
 
         async function loadPDFs() {
@@ -573,14 +574,31 @@
                     const typedArray = new Uint8Array(arrayBuffer);
                     const pdfDoc = await pdfjsLib.getDocument(typedArray).promise;
                     pdfContent[pdf.id] = [];
+                    keywordMap[pdf.id] = {};
                     pdf.pages = pdfDoc.numPages;
                     for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++) {
                         const page = await pdfDoc.getPage(pageNum);
-                        const textContent = await page.getTextContent();
-                        const text = textContent.items.map(item => item.str).join(' ');
+                        const viewport = page.getViewport({ scale: 1.0 });
+                        const canvas = document.createElement('canvas');
+                        const context = canvas.getContext('2d');
+                        canvas.height = viewport.height;
+                        canvas.width = viewport.width;
+                        await page.render({ canvasContext: context, viewport }).promise;
+                        const imageData = canvas.toDataURL('image/png');
+                        const { data: { text } } = await Tesseract.recognize(imageData, 'eng', {
+                            logger: m => console.log(m)
+                        });
                         pdfContent[pdf.id].push({ page: pageNum, text });
+                        const words = text.toLowerCase().split(/\s+/).filter(word => word.length > 3);
+                        words.forEach(word => {
+                            if (!keywordMap[pdf.id][word]) {
+                                keywordMap[pdf.id][word] = [];
+                            }
+                            keywordMap[pdf.id][word].push(pageNum);
+                        });
                     }
                     console.log(`Loaded ${pdf.name}: ${pdfContent[pdf.id].length} pages`);
+                    console.log(`Keyword map for ${pdf.name}:`, keywordMap[pdf.id]);
                 } catch (error) {
                     console.error(`Error loading ${pdf.name}:`, error);
                     loadErrors.push(pdf.name);
@@ -591,6 +609,7 @@
             } else {
                 console.log('All PDFs processed');
                 console.log('pdfContent:', pdfContent);
+                console.log('keywordMap:', keywordMap);
                 updateSlidesViewer();
             }
         }
@@ -619,6 +638,22 @@
                 container.appendChild(slideCard);
             });
             lucide.createIcons();
+        }
+
+        function enhanceResponse(text, query) {
+            let enhanced = text.substring(0, 500);
+            if (query.toLowerCase().includes('explain simply')) {
+                enhanced = `**Simplified Explanation**: ${enhanced}\n\n**Key Points**:\n- ${enhanced.split('. ')[0]}.\n- See slide for more details.`;
+            } else if (query.toLowerCase().includes('practice questions')) {
+                const keyTerms = enhanced.split(' ').filter(word => word.length > 4).slice(0, 2);
+                enhanced = `**Practice Questions**:\n1. What is ${keyTerms[0]}?\n2. How does ${keyTerms[1]} relate to the topic?\n\n**Source**: ${enhanced}`;
+            } else if (query.toLowerCase().includes('summarize')) {
+                enhanced = `**Summary**:\n- ${enhanced.split('. ')[0]}.\n- ${enhanced.split('. ')[1] || 'See slide.'}`;
+            } else if (query.toLowerCase().includes('examples')) {
+                enhanced = `**Example**: ${enhanced}\nImagine ${enhanced.split('. ')[0]} in a real-world scenario.`;
+            }
+            enhanced = enhanced.replace(new RegExp(`(${query.split(' ').join('|')})`, 'gi'), '<strong>$1</strong>');
+            return enhanced;
         }
 
         async function handleSendMessage(event) {
@@ -658,15 +693,13 @@
             let context = '';
             let relevantPage = 1;
             let pdfName = '';
-            console.log('pdfContent:', pdfContent);
-            console.log('selectedSlides:', selectedSlides);
             if (selectedSlides.length > 0) {
                 const selectedId = selectedSlides[0];
                 const selectedPdf = pdfContent[selectedId];
-                console.log('Selected PDF content:', selectedPdf);
                 if (selectedPdf && selectedPdf.length > 0) {
+                    const queryWords = message.toLowerCase().split(/\s+/);
                     for (const page of selectedPdf) {
-                        if (page.text.toLowerCase().includes(message.toLowerCase())) {
+                        if (queryWords.some(word => keywordMap[selectedId][word]?.includes(page.page))) {
                             context = page.text.substring(0, 1000);
                             relevantPage = page.page;
                             pdfName = pdfFiles.find(pdf => pdf.id === selectedId).name;
@@ -685,11 +718,12 @@
                 }
             } else {
                 console.log('No slide selected, searching all PDFs');
+                const queryWords = message.toLowerCase().split(/\s+/);
                 for (const pdfId of Object.keys(pdfContent)) {
                     const pdfPages = pdfContent[pdfId];
                     if (pdfPages && pdfPages.length > 0) {
                         for (const page of pdfPages) {
-                            if (page.text.toLowerCase().includes(message.toLowerCase())) {
+                            if (queryWords.some(word => keywordMap[pdfId][word]?.includes(page.page))) {
                                 context = page.text.substring(0, 1000);
                                 relevantPage = page.page;
                                 pdfName = pdfFiles.find(pdf => pdf.id === pdfId).name;
@@ -714,33 +748,25 @@
                 messagesContainer.removeChild(typingIndicator);
                 return;
             }
-            const payload = {
-                messages: [
-                    { role: 'system', content: 'You are a helpful assistant providing accurate answers based on the provided context.' },
-                    { role: 'user', content: `${message}\n\nContext: ${context}` }
-                ],
-                stream: false,
-                temperature: 0.3,
-                max_tokens: 512
-            };
             try {
-                console.log('Sending payload to Portkey:', JSON.stringify(payload));
-                const response = await fetch('/.netlify/functions/query-ai', {
+                console.log('Sending query to Wikipedia:', message);
+                const response = await fetch('/.netlify/functions/query-wikipedia', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ ...payload, provider: 'portkey', model: 'gpt-4o-mini' })
+                    body: JSON.stringify({ query: message, context })
                 });
                 if (!response.ok) {
-                    throw new Error(`Portkey failed: HTTP ${response.status}`);
+                    throw new Error(`Wikipedia API failed: HTTP ${response.status}`);
                 }
                 const result = await response.json();
-                const answer = result.choices?.[0]?.message?.content || 'Sorry, I couldn’t find a clear answer.';
+                let answer = result.content || 'Sorry, I couldn’t find relevant information on Wikipedia.';
+                answer = enhanceResponse(answer, message);
                 const botMessage = document.createElement('div');
                 botMessage.className = 'message bot';
                 botMessage.innerHTML = `
                     <div class="avatar"><i data-lucide="bot" class="h-4 w-4"></i></div>
                     <div class="message-content">
-                        <p>${answer} (See ${pdfName}, slide ${relevantPage})</p>
+                        <p>${answer} (See ${pdfName}, slide ${relevantPage}) [Source: Wikipedia]</p>
                         <div class="meta">
                             <span>${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                             <div class="actions">
@@ -757,65 +783,9 @@
                 messagesContainer.scrollTop = messagesContainer.scrollHeight;
                 lucide.createIcons();
             } catch (error) {
-                console.error('Portkey error:', error.message);
-                console.log('Falling back to Together AI');
-                try {
-                    const fallbackPayload = {
-                        ...payload,
-                        model: 'meta-llama/Llama-3-70b-chat-hf'
-                    };
-                    console.log('Sending payload to Together AI:', JSON.stringify(fallbackPayload));
-                    const fallbackResponse = await fetch('/.netlify/functions/query-ai', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ ...fallbackPayload, provider: 'together' })
-                    });
-                    if (!fallbackResponse.ok) {
-                        const contentType = fallbackResponse.headers.get('content-type');
-                        let errorData;
-                        if (contentType && contentType.includes('application/json')) {
-                            errorData = await fallbackResponse.json();
-                        } else {
-                            errorData = { error: `HTTP ${fallbackResponse.status}`, details: await fallbackResponse.text() };
-                        }
-                        let errorMessage = errorData.error?.message || JSON.stringify(errorData, null, 2);
-                        if (fallbackResponse.status === 429) {
-                            errorMessage = `Together AI rate limit exceeded (60 RPM). Please wait or upgrade your plan at https://www.together.ai.`;
-                        } else if (fallbackResponse.status === 401) {
-                            errorMessage = `Together AI: Unauthorized. Please verify TOGETHER_API_KEY in Netlify environment variables.`;
-                        } else if (errorData.error?.code === 'model_not_supported') {
-                            errorMessage = `Together AI: The model 'meta-llama/Llama-3-70b-chat-hf' is not supported. Check available models at https://www.together.ai.`;
-                        }
-                        throw new Error(errorMessage);
-                    }
-                    const result = await fallbackResponse.json();
-                    const answer = result.choices?.[0]?.message?.content || 'Sorry, I couldn’t find a clear answer.';
-                    const botMessage = document.createElement('div');
-                    botMessage.className = 'message bot';
-                    botMessage.innerHTML = `
-                        <div class="avatar"><i data-lucide="bot" class="h-4 w-4"></i></div>
-                        <div class="message-content">
-                            <p>${answer} (See ${pdfName}, slide ${relevantPage}) [Fallback: Together AI]</p>
-                            <div class="meta">
-                                <span>${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                                <div class="actions">
-                                    <button onclick="handleReaction('temp', 'like')"><i data-lucide="thumbs-up" class="h-3 w-3"></i></button>
-                                    <button onclick="handleReaction('temp', 'dislike')"><i data-lucide="thumbs-down" class="h-3 w-3"></i></button>
-                                    <button onclick="regenerateResponse('temp')"><i data-lucide="rotate-ccw" class="h-3 w-3"></i></button>
-                                    <button onclick="copyMessage('${answer}')"><i data-lucide="copy" class="h-3 w-3"></i></button>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                    messagesContainer.removeChild(typingIndicator);
-                    messagesContainer.appendChild(botMessage);
-                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
-                    lucide.createIcons();
-                } catch (fallbackError) {
-                    console.error('Together AI error:', fallbackError.message);
-                    alert(`Error querying AI: Portkey failed (${error.message}), and Together AI failed (${fallbackError.message}). Please try again or contact support.`);
-                    messagesContainer.removeChild(typingIndicator);
-                }
+                console.error('Wikipedia API error:', error.message);
+                alert(`Error querying Wikipedia: ${error.message}. Please try again.`);
+                messagesContainer.removeChild(typingIndicator);
             }
         }
 
@@ -847,6 +817,9 @@
 
         function regenerateResponse(id) {
             alert('Regenerating response...');
+            const input = document.getElementById('chatInput');
+            input.value = document.querySelector(`.message[data-id="${id}"] .message-content p`)?.textContent || '';
+            handleSendMessage(new Event('submit'));
         }
 
         let viewMode = 'grid';
