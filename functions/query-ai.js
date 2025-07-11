@@ -22,7 +22,7 @@ exports.handler = async function (event) {
         };
     }
 
-    const { provider, model, messages, stream, temperature, max_tokens, api_base } = data;
+    const { provider, model, messages, stream, temperature, max_tokens } = data;
     if (!provider || !model || !messages) {
         console.log('Missing provider, model, or messages:', { provider, model, messages });
         return {
@@ -31,68 +31,7 @@ exports.handler = async function (event) {
         };
     }
 
-    if (provider === 'litellm') {
-        const LITELLM_API_KEY = process.env.LITELLM_API_KEY;
-        if (!LITELLM_API_KEY) {
-            console.log('LITELLM_API_KEY is not set');
-            return {
-                statusCode: 500,
-                body: JSON.stringify({ error: 'Server configuration error: LITELLM_API_KEY not set' })
-            };
-        }
-        if (!api_base) {
-            console.log('api_base is missing for LiteLLM provider');
-            return {
-                statusCode: 400,
-                body: JSON.stringify({ error: 'api_base is required for LiteLLM provider' })
-            };
-        }
-
-        const API_URL = `${api_base}/v1/chat/completions`;
-        try {
-            console.log('Calling LiteLLM API with model:', model, 'api_base:', api_base);
-            const response = await fetch(API_URL, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${LITELLM_API_KEY}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ model, messages, stream: stream || false, temperature: temperature || 0.3, max_tokens })
-            });
-            console.log('LiteLLM response status:', response.status, 'statusText:', response.statusText);
-
-            if (!response.ok) {
-                const text = await response.text();
-                let errorData = { error: `HTTP ${response.status}`, details: text };
-                try {
-                    errorData = JSON.parse(text);
-                    if (response.status === 429) {
-                        errorData.suggestion = 'LiteLLM rate limit exceeded. Wait a few seconds or check your Hugging Face plan at https://huggingface.co.';
-                    } else if (response.status === 401) {
-                        errorData.suggestion = 'LiteLLM: Invalid API key. Verify LITELLM_API_KEY in Netlify environment variables and Hugging Face dashboard.';
-                    } else if (errorData.error?.code === 'model_not_supported') {
-                        errorData.suggestion = 'LiteLLM: The model is not supported. Check available models at https://huggingface.co.';
-                    }
-                } catch (e) {
-                    console.log('Non-JSON response:', text);
-                }
-                throw new Error(JSON.stringify(errorData, null, 2));
-            }
-
-            const result = await response.json();
-            console.log('LiteLLM response:', JSON.stringify(result, null, 2));
-            return {
-                statusCode: 200,
-                body: JSON.stringify(result)
-            };
-        } catch (error) {
-            console.error('LiteLLM error:', error.message, error.stack);
-            return {
-                statusCode: 500,
-                body: JSON.stringify({ error: 'Failed to query LiteLLM', details: error.message })
-            };
-        }
-    } else if (provider === 'portkey') {
+    if (provider === 'portkey') {
         const PORTKEY_API_KEY = process.env.PORTKEY_API_KEY;
         const PORTKEY_VIRTUAL_KEY = process.env.PORTKEY_VIRTUAL_KEY;
         if (!PORTKEY_API_KEY || !PORTKEY_VIRTUAL_KEY) {
@@ -118,10 +57,10 @@ exports.handler = async function (event) {
             console.log('Portkey AI response status:', response.status, 'statusText:', response.statusText);
 
             if (!response.ok) {
-                const text = await response.text();
-                let errorData = { error: `HTTP ${response.status}`, details: text };
+                let errorData;
                 try {
-                    errorData = JSON.parse(text);
+                    errorData = await response.json();
+                    console.log('Portkey AI error response:', JSON.stringify(errorData, null, 2));
                     if (response.status === 429) {
                         errorData.suggestion = 'Portkey rate limit exceeded. Wait a few seconds or upgrade your plan at https://portkey.ai.';
                     } else if (response.status === 401) {
@@ -130,7 +69,9 @@ exports.handler = async function (event) {
                         errorData.suggestion = 'Portkey: The model is not supported. Check available models at https://portkey.ai.';
                     }
                 } catch (e) {
+                    const text = await response.text();
                     console.log('Non-JSON response:', text);
+                    errorData = { error: `HTTP ${response.status}`, details: text };
                 }
                 throw new Error(JSON.stringify(errorData, null, 2));
             }
@@ -172,19 +113,21 @@ exports.handler = async function (event) {
             console.log('Together AI response status:', response.status, 'statusText:', response.statusText);
 
             if (!response.ok) {
-                const text = await response.text();
-                let errorData = { error: `HTTP ${response.status}`, details: text };
+                let errorData;
                 try {
-                    errorData = JSON.parse(text);
+                    errorData = await response.json();
+                    console.log('Together AI error response:', JSON.stringify(errorData, null, 2));
                     if (response.status === 429) {
-                        errorData.suggestion = 'Together AI rate limit exceeded (60 RPM). Please wait or upgrade your plan at https://www.together.ai.';
+                        errorData.suggestion = 'Together AI rate limit exceeded (60 RPM). Wait a few seconds or upgrade your plan at https://www.together.ai.';
                     } else if (response.status === 401) {
                         errorData.suggestion = 'Together AI: Invalid API key. Verify TOGETHER_API_KEY in Netlify environment variables.';
                     } else if (errorData.error?.code === 'model_not_supported') {
                         errorData.suggestion = 'Together AI: The model is not supported. Try a different model or check available models at https://www.together.ai.';
                     }
                 } catch (e) {
+                    const text = await response.text();
                     console.log('Non-JSON response:', text);
+                    errorData = { error: `HTTP ${response.status}`, details: text };
                 }
                 throw new Error(JSON.stringify(errorData, null, 2));
             }
@@ -205,7 +148,7 @@ exports.handler = async function (event) {
     } else {
         return {
             statusCode: 400,
-            body: JSON.stringify({ error: 'Invalid provider specified. Use "litellm", "portkey", or "together".' })
+            body: JSON.stringify({ error: 'Invalid provider specified. Use "portkey" or "together".' })
         };
     }
 };
