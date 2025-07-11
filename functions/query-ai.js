@@ -57,8 +57,9 @@ exports.handler = async function (event) {
             console.log('Portkey AI response status:', response.status, 'statusText:', response.statusText);
 
             if (!response.ok) {
+                const contentType = response.headers.get('content-type');
                 let errorData;
-                try {
+                if (contentType && contentType.includes('application/json')) {
                     errorData = await response.json();
                     console.log('Portkey AI error response:', JSON.stringify(errorData, null, 2));
                     if (response.status === 429) {
@@ -68,10 +69,9 @@ exports.handler = async function (event) {
                     } else if (errorData.error?.code === 'model_not_supported') {
                         errorData.suggestion = 'Portkey: The model is not supported. Check available models at https://portkey.ai.';
                     }
-                } catch (e) {
-                    const text = await response.text();
-                    console.log('Non-JSON response:', text);
-                    errorData = { error: `HTTP ${response.status}`, details: text };
+                } else {
+                    errorData = { error: `HTTP ${response.status}`, details: await response.text() };
+                    console.log('Non-JSON response:', errorData.details);
                 }
                 throw new Error(JSON.stringify(errorData, null, 2));
             }
@@ -108,13 +108,14 @@ exports.handler = async function (event) {
                     'Authorization': `Bearer ${TOGETHER_API_KEY}`,
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ model, messages, stream: stream || false, temperature: temperature || 0.3 })
+                body: JSON.stringify({ model, messages, stream: stream || false, temperature: temperature || 0.3, max_tokens })
             });
             console.log('Together AI response status:', response.status, 'statusText:', response.statusText);
 
             if (!response.ok) {
+                const contentType = response.headers.get('content-type');
                 let errorData;
-                try {
+                if (contentType && contentType.includes('application/json')) {
                     errorData = await response.json();
                     console.log('Together AI error response:', JSON.stringify(errorData, null, 2));
                     if (response.status === 429) {
@@ -124,10 +125,9 @@ exports.handler = async function (event) {
                     } else if (errorData.error?.code === 'model_not_supported') {
                         errorData.suggestion = 'Together AI: The model is not supported. Try a different model or check available models at https://www.together.ai.';
                     }
-                } catch (e) {
-                    const text = await response.text();
-                    console.log('Non-JSON response:', text);
-                    errorData = { error: `HTTP ${response.status}`, details: text };
+                } else {
+                    errorData = { error: `HTTP ${response.status}`, details: await response.text() };
+                    console.log('Non-JSON response:', errorData.details);
                 }
                 throw new Error(JSON.stringify(errorData, null, 2));
             }
