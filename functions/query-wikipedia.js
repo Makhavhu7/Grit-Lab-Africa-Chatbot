@@ -15,7 +15,7 @@ exports.handler = async function (event) {
         data = JSON.parse(event.body);
         console.log('Parsed body:', JSON.stringify(data, null, 2));
     } catch (error) {
-        console.log('JSON parse error:', error.message);
+        console.error('JSON parse error:', error.message, error.stack);
         return {
             statusCode: 400,
             body: JSON.stringify({ error: 'Invalid JSON in request body', details: error.message })
@@ -33,11 +33,15 @@ exports.handler = async function (event) {
 
     try {
         console.log('Querying Wikipedia for:', query);
-        const searchResponse = await fetch(`https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(query)}&format=json&origin=*`);
+        const searchUrl = `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(query)}&format=json&origin=*`;
+        console.log('Search URL:', searchUrl);
+        const searchResponse = await fetch(searchUrl);
         if (!searchResponse.ok) {
-            throw new Error(`Wikipedia search failed: HTTP ${searchResponse.status}`);
+            const errorText = await searchResponse.text();
+            throw new Error(`Wikipedia search failed: HTTP ${searchResponse.status}, ${errorText}`);
         }
         const searchData = await searchResponse.json();
+        console.log('Search response:', JSON.stringify(searchData, null, 2));
         const page = searchData.query.search[0];
         if (!page) {
             return {
@@ -46,11 +50,15 @@ exports.handler = async function (event) {
             };
         }
 
-        const pageResponse = await fetch(`https://en.wikipedia.org/w/api.php?action=query&prop=extracts&exintro&explaintext&titles=${encodeURIComponent(page.title)}&format=json&origin=*`);
+        const pageUrl = `https://en.wikipedia.org/w/api.php?action=query&prop=extracts&exintro&explaintext&titles=${encodeURIComponent(page.title)}&format=json&origin=*`;
+        console.log('Page URL:', pageUrl);
+        const pageResponse = await fetch(pageUrl);
         if (!pageResponse.ok) {
-            throw new Error(`Wikipedia page fetch failed: HTTP ${pageResponse.status}`);
+            const errorText = await pageResponse.text();
+            throw new Error(`Wikipedia page fetch failed: HTTP ${pageResponse.status}, ${errorText}`);
         }
         const pageData = await pageResponse.json();
+        console.log('Page response:', JSON.stringify(pageData, null, 2));
         const pageId = Object.keys(pageData.query.pages)[0];
         let content = pageData.query.pages[pageId].extract || 'No content available.';
         
@@ -64,7 +72,7 @@ exports.handler = async function (event) {
             body: JSON.stringify({ content })
         };
     } catch (error) {
-        console.error('Wikipedia API error:', error.message);
+        console.error('Wikipedia API error:', error.message, error.stack);
         return {
             statusCode: 500,
             body: JSON.stringify({ error: 'Failed to query Wikipedia', details: error.message })

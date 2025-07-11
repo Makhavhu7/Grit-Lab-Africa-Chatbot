@@ -462,6 +462,21 @@
             flex: 1;
             padding: 0 0.75rem;
         }
+        .loading-indicator {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.7);
+            color: hsl(0 0% 100%);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            display: none;
+            z-index: 1000;
+        }
+        .loading-indicator.active {
+            display: block;
+        }
     </style>
 </head>
 <body>
@@ -552,6 +567,9 @@
             </div>
         </div>
     </div>
+    <div id="loadingIndicator" class="loading-indicator">
+        Loading PDFs, please wait...
+    </div>
     <script>
         lucide.createIcons();
         const pdfFiles = [
@@ -562,9 +580,25 @@
         let pdfContent = {};
         let keywordMap = {};
         let selectedSlides = [];
+        let pdfThumbnails = {};
 
         async function loadPDFs() {
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            loadingIndicator.classList.add('active');
             let loadErrors = [];
+            
+            // Load cached content from localStorage
+            const cachedContent = localStorage.getItem('pdfContent');
+            const cachedKeywords = localStorage.getItem('keywordMap');
+            if (cachedContent && cachedKeywords) {
+                pdfContent = JSON.parse(cachedContent);
+                keywordMap = JSON.parse(cachedKeywords);
+                console.log('Loaded cached PDF content and keyword map');
+                updateSlidesViewer();
+                loadingIndicator.classList.remove('active');
+                return;
+            }
+
             for (const pdf of pdfFiles) {
                 try {
                     console.log(`Fetching PDF: ${pdf.path}`);
@@ -575,43 +609,84 @@
                     const pdfDoc = await pdfjsLib.getDocument(typedArray).promise;
                     pdfContent[pdf.id] = [];
                     keywordMap[pdf.id] = {};
-                    pdf.pages = pdfDoc.numPages;
+                    pdfThumbnails[pdf.id] = [];
+
+                    // Generate thumbnail for first page only
+                    const page = await pdfDoc.getPage(1);
+                    const viewport = page.getViewport({ scale: 0.5 }); // Lower scale for faster rendering
+                    const canvas = document.createElement('canvas');
+                    const context = canvas.getContext('2d');
+                    canvas.height = viewport.height;
+                    canvas.width = viewport.width;
+                    await page.render({ canvasContext: context, viewport }).promise;
+                    pdfThumbnails[pdf.id][1] = canvas.toDataURL('image/png');
+
+                    // Initialize empty content for all pages
                     for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++) {
-                        const page = await pdfDoc.getPage(pageNum);
-                        const viewport = page.getViewport({ scale: 1.0 });
-                        const canvas = document.createElement('canvas');
-                        const context = canvas.getContext('2d');
-                        canvas.height = viewport.height;
-                        canvas.width = viewport.width;
-                        await page.render({ canvasContext: context, viewport }).promise;
-                        const imageData = canvas.toDataURL('image/png');
-                        const { data: { text } } = await Tesseract.recognize(imageData, 'eng', {
-                            logger: m => console.log(m)
-                        });
-                        pdfContent[pdf.id].push({ page: pageNum, text });
-                        const words = text.toLowerCase().split(/\s+/).filter(word => word.length > 3);
-                        words.forEach(word => {
-                            if (!keywordMap[pdf.id][word]) {
-                                keywordMap[pdf.id][word] = [];
-                            }
-                            keywordMap[pdf.id][word].push(pageNum);
-                        });
+                        pdfContent[pdf.id].push({ page: pageNum, text: null });
                     }
-                    console.log(`Loaded ${pdf.name}: ${pdfContent[pdf.id].length} pages`);
-                    console.log(`Keyword map for ${pdf.name}:`, keywordMap[pdf.id]);
+                    pdf.pages = pdfDoc.numPages;
+                    console.log(`Loaded thumbnail for ${pdf.name}, ${pdf.pages} pages`);
                 } catch (error) {
                     console.error(`Error loading ${pdf.name}:`, error);
                     loadErrors.push(pdf.name);
                 }
             }
+
             if (loadErrors.length > 0) {
                 alert(`Failed to load PDFs: ${loadErrors.join(', ')}. Please check the files and try again.`);
             } else {
                 console.log('All PDFs processed');
                 console.log('pdfContent:', pdfContent);
                 console.log('keywordMap:', keywordMap);
+                localStorage.setItem('pdfContent', JSON.stringify(pdfContent));
+                localStorage.setItem('keywordMap', JSON.stringify(keywordMap));
                 updateSlidesViewer();
             }
+            loadingIndicator.classList.remove('active');
+        }
+
+        async function processPageOCR(pdfId, pageNum) {
+            if (pdfContent[pdfId][pageNum - 1].text) {
+                console.log(`Using cached OCR for ${pdfFiles.find(p => p.id === pdfId).name}, page ${pageNum}`);
+                return;
+            }
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            loadingIndicator.textContent = `Processing OCR for ${pdfFiles.find(p => p.id === pdfId).name}, page ${pageNum}...`;
+            loadingIndicator.classList.add('active');
+            try {
+                const response = await fetch(pdfFiles.find(p => p.id === pdfId).path);
+                if (!response.ok) throw new Error(`Failed to fetch PDF`);
+                const arrayBuffer = await response.arrayBuffer();
+                const typedArray = new Uint8Array(arrayBuffer);
+                const pdfDoc = await pdfjsLib.getDocument(typedArray).promise;
+                const page = await pdfDoc.getPage(pageNum);
+                const viewport = page.getViewport({ scale: 1.0 });
+                const canvas = document.createElement('canvas');
+                const context = canvas.getContext('2d');
+                canvas.height = viewport.height;
+                canvas.width = viewport.width;
+                await page.render({ canvasContext: context, viewport }).promise;
+                const imageData = canvas.toDataURL('image/png');
+                const { data: { text } } = await Tesseract.recognize(imageData, 'eng', {
+                    logger: m => console.log(`OCR progress for page ${pageNum}: ${Math.round(m.progress * 100)}%`)
+                });
+                pdfContent[pdfId][pageNum - 1].text = text;
+                const words = text.toLowerCase().split(/\s+/).filter(word => word.length > 3);
+                words.forEach(word => {
+                    if (!keywordMap[pdfId][word]) {
+                        keywordMap[pdfId][word] = [];
+                    }
+                    keywordMap[pdfId][word].push(pageNum);
+                });
+                console.log(`OCR completed for ${pdfFiles.find(p => p.id === pdfId).name}, page ${pageNum}`);
+                localStorage.setItem('pdfContent', JSON.stringify(pdfContent));
+                localStorage.setItem('keywordMap', JSON.stringify(keywordMap));
+            } catch (error) {
+                console.error(`OCR error for ${pdfFiles.find(p => p.id === pdfId).name}, page ${pageNum}:`, error);
+                alert(`Failed to process OCR for page ${pageNum}. Please try again.`);
+            }
+            loadingIndicator.classList.remove('active');
         }
 
         function updateSlidesViewer() {
@@ -624,7 +699,7 @@
                 slideCard.onclick = () => toggleSlideSelection(pdf.id);
                 slideCard.innerHTML = `
                     <div class="thumbnail">
-                        <img src="/static/placeholder.png" alt="${pdf.name}">
+                        <img src="${pdfThumbnails[pdf.id]?.[1] || '/static/placeholder.png'}" alt="${pdf.name}">
                     </div>
                     <div class="content">
                         <h3 class="title">${pdf.name}</h3>
@@ -646,7 +721,7 @@
                 enhanced = `**Simplified Explanation**: ${enhanced}\n\n**Key Points**:\n- ${enhanced.split('. ')[0]}.\n- See slide for more details.`;
             } else if (query.toLowerCase().includes('practice questions')) {
                 const keyTerms = enhanced.split(' ').filter(word => word.length > 4).slice(0, 2);
-                enhanced = `**Practice Questions**:\n1. What is ${keyTerms[0]}?\n2. How does ${keyTerms[1]} relate to the topic?\n\n**Source**: ${enhanced}`;
+                enhanced = `**Practice Questions**:\n1. What is ${keyTerms[0] || 'the concept'}?\n2. How does ${keyTerms[1] || 'it'} relate to the topic?\n\n**Source**: ${enhanced}`;
             } else if (query.toLowerCase().includes('summarize')) {
                 enhanced = `**Summary**:\n- ${enhanced.split('. ')[0]}.\n- ${enhanced.split('. ')[1] || 'See slide.'}`;
             } else if (query.toLowerCase().includes('examples')) {
@@ -698,8 +773,14 @@
                 const selectedPdf = pdfContent[selectedId];
                 if (selectedPdf && selectedPdf.length > 0) {
                     const queryWords = message.toLowerCase().split(/\s+/);
+                    // Ensure OCR is done for relevant pages
+                    for (let pageNum = 1; pageNum <= selectedPdf.length; pageNum++) {
+                        if (!pdfContent[selectedId][pageNum - 1].text) {
+                            await processPageOCR(selectedId, pageNum);
+                        }
+                    }
                     for (const page of selectedPdf) {
-                        if (queryWords.some(word => keywordMap[selectedId][word]?.includes(page.page))) {
+                        if (page.text && queryWords.some(word => keywordMap[selectedId][word]?.includes(page.page))) {
                             context = page.text.substring(0, 1000);
                             relevantPage = page.page;
                             pdfName = pdfFiles.find(pdf => pdf.id === selectedId).name;
@@ -707,7 +788,7 @@
                         }
                     }
                     if (!context) {
-                        context = selectedPdf[0].text.substring(0, 1000);
+                        context = selectedPdf[0].text?.substring(0, 1000) || '';
                         pdfName = pdfFiles.find(pdf => pdf.id === selectedId).name;
                     }
                 } else {
@@ -722,8 +803,13 @@
                 for (const pdfId of Object.keys(pdfContent)) {
                     const pdfPages = pdfContent[pdfId];
                     if (pdfPages && pdfPages.length > 0) {
+                        for (let pageNum = 1; pageNum <= pdfPages.length; pageNum++) {
+                            if (!pdfContent[pdfId][pageNum - 1].text) {
+                                await processPageOCR(pdfId, pageNum);
+                            }
+                        }
                         for (const page of pdfPages) {
-                            if (queryWords.some(word => keywordMap[pdfId][word]?.includes(page.page))) {
+                            if (page.text && queryWords.some(word => keywordMap[pdfId][word]?.includes(page.page))) {
                                 context = page.text.substring(0, 1000);
                                 relevantPage = page.page;
                                 pdfName = pdfFiles.find(pdf => pdf.id === pdfId).name;
@@ -736,7 +822,7 @@
                 if (!context && Object.keys(pdfContent).length > 0) {
                     const firstPdfId = Object.keys(pdfContent)[0];
                     const firstPdfPages = pdfContent[firstPdfId];
-                    if (firstPdfPages && firstPdfPages.length > 0) {
+                    if (firstPdfPages && firstPdfPages.length > 0 && firstPdfPages[0].text) {
                         context = firstPdfPages[0].text.substring(0, 1000);
                         pdfName = pdfFiles.find(pdf => pdf.id === firstPdfId).name;
                     }
@@ -756,7 +842,8 @@
                     body: JSON.stringify({ query: message, context })
                 });
                 if (!response.ok) {
-                    throw new Error(`Wikipedia API failed: HTTP ${response.status}`);
+                    const errorText = await response.text();
+                    throw new Error(`Wikipedia API failed: HTTP ${response.status}, ${errorText}`);
                 }
                 const result = await response.json();
                 let answer = result.content || 'Sorry, I couldn’t find relevant information on Wikipedia.';
@@ -853,7 +940,7 @@
             });
         }
 
-        function toggleSlideSelection(id) {
+        async function toggleSlideSelection(id) {
             const card = document.querySelector(`.slide-card[data-id="${id}"]`);
             if (selectedSlides.includes(id)) {
                 selectedSlides = selectedSlides.filter(slideId => slideId !== id);
@@ -862,6 +949,13 @@
                 selectedSlides = [id];
                 document.querySelectorAll('.slide-card').forEach(c => c.classList.remove('selected'));
                 card.classList.add('selected');
+                // Process OCR for all pages of selected PDF
+                const pdf = pdfFiles.find(p => p.id === id);
+                for (let pageNum = 1; pageNum <= pdf.pages; pageNum++) {
+                    if (!pdfContent[id][pageNum - 1].text) {
+                        await processPageOCR(id, pageNum);
+                    }
+                }
             }
             const badge = document.getElementById('selectionBadge');
             badge.textContent = `${selectedSlides.length} slide${selectedSlides.length !== 1 ? 's' : ''} selected`;

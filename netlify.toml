@@ -1,7 +1,14 @@
 [build]
-  command = "echo 'No build command needed'"
+  command = "npm install"
   publish = "."
   functions = "functions"
 
-[functions]
-  "query-wikipedia" = { schedule = "@hourly" }
+[[redirects]]
+  from = "/pdfs/*"
+  to = "/pdfs/:splat"
+  status = 200
+
+[[redirects]]
+  from = "/static/*"
+  to = "/static/:splat"
+  status = 200
